@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✓</text></svg>">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f8f7;
+      --bg-tertiary: #eeeeec;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666666;
+      --text-tertiary: #999999;
+      --border: #e5e5e5;
+      --accent: #2563eb;
+      --accent-bg: #eff6ff;
+      --accent-text: #1d4ed8;
+      --danger: #dc2626;
+      --danger-bg: #fef2f2;
+      --warning: #d97706;
+      --success: #16a34a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1a1a1a;
+        --bg-secondary: #242424;
+        --bg-tertiary: #333333;
+        --text-primary: #f5f5f5;
+        --text-secondary: #a0a0a0;
+        --text-tertiary: #707070;
+        --border: #404040;
+        --accent: #3b82f6;
+        --accent-bg: #1e3a5f;
+        --accent-text: #93c5fd;
+        --danger: #f87171;
+        --danger-bg: #3f1a1a;
+        --warning: #fbbf24;
+        --success: #4ade80;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .container { max-width: 950px; margin: 0 auto; }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .logo {
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .header-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .btn {
+      padding: 0.45rem 0.7rem;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+      background: var(--bg-primary);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .btn:hover { background: var(--bg-tertiary); }
+    .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+    .btn-primary:hover { opacity: 0.9; background: var(--accent); }
+    .view-toggle {
+      display: flex;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      padding: 2px;
+    }
+    .view-btn {
+      padding: 0.35rem 0.5rem;
+      font-size: 0.75rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .view-btn.active { background: var(--bg-primary); color: var(--text-primary); font-weight: 500; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    .stat {
+      background: var(--bg-primary);
+      padding: 0.6rem;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    .stat-num { font-size: 1.4rem; font-weight: 600; }
+    .stat-label { font-size: 0.65rem; color: var(--text-secondary); }
+    .stat.warning .stat-num { color: var(--danger); }
+    .tabs {
+      display: flex;
+      gap: 0.2rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+    .tab {
+      padding: 0.45rem 0.7rem;
+      font-size: 0.75rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .tab:hover { background: var(--bg-tertiary); }
+    .tab.active { background: var(--accent-bg); color: var(--accent-text); font-weight: 500; }
+    .tab .badge {
+      font-size: 0.6rem;
+      background: var(--danger);
+      color: white;
+      padding: 0.1rem 0.35rem;
+      border-radius: 10px;
+      margin-left: 0.2rem;
+    }
+    .card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .section-header {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.6rem;
+      font-weight: 500;
+    }
+    .input-row {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.8rem;
+      flex-wrap: wrap;
+    }
+    .input-row input[type="text"] {
+      flex: 1;
+      min-width: 160px;
+      padding: 0.55rem 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.8rem;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    .input-row input[type="text"]:focus { outline: none; border-color: var(--accent); }
+    .date-input {
+      padding: 0.55rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      width: 110px;
+      cursor: pointer;
+    }
+    .input-row select {
+      padding: 0.55rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    .task-list { display: flex; flex-direction: column; gap: 0.35rem; }
+    .task {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      padding: 0.6rem 0.7rem;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      border-left: 3px solid var(--border);
+    }
+    .task.priority-high { border-left-color: var(--danger); }
+    .task.priority-med { border-left-color: var(--warning); }
+    .task.priority-low { border-left-color: var(--success); }
+    .task.done { opacity: 0.45; }
+    .task.done .task-text { text-decoration: line-through; }
+    .task.overdue { background: var(--danger-bg); }
+    .checkbox {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+    .checkbox:hover { border-color: var(--accent); }
+    .checkbox.checked { background: var(--accent); border-color: var(--accent); color: white; }
+    .task-content { flex: 1; min-width: 0; }
+    .task-text { font-size: 0.8rem; word-break: break-word; }
+    .task-meta { font-size: 0.65rem; color: var(--text-tertiary); margin-top: 0.15rem; }
+    .task-meta .overdue { color: var(--danger); font-weight: 500; }
+    .task-meta .due-soon { color: var(--warning); }
+    .task-actions { display: flex; opacity: 0; transition: opacity 0.15s; }
+    .task:hover .task-actions { opacity: 1; }
+    .task-btn {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 0.2rem;
+      color: var(--text-tertiary);
+      font-size: 0.85rem;
+    }
+    .task-btn:hover { color: var(--text-primary); }
+    .empty {
+      padding: 1.5rem;
+      text-align: center;
+      color: var(--text-tertiary);
+      font-size: 0.8rem;
+    }
+    .client-section { margin-bottom: 1rem; }
+    .client-header {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--accent-text);
+      margin-bottom: 0.4rem;
+      padding: 0.35rem 0.5rem;
+      background: var(--accent-bg);
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .client-input { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
+    .client-input input {
+      flex: 1;
+      padding: 0.45rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    .kanban { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+    @media (max-width: 700px) { .kanban { grid-template-columns: 1fr; } }
+    .kanban-col {
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      padding: 0.6rem;
+      min-height: 120px;
+    }
+    .kanban-title {
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.2rem; }
+    .cal-header { font-size: 0.6rem; color: var(--text-tertiary); text-align: center; padding: 0.2rem; font-weight: 500; }
+    .cal-day {
+      min-height: 65px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 0.2rem;
+      font-size: 0.6rem;
+    }
+    .cal-day.today { border-color: var(--accent); background: var(--accent-bg); }
+    .cal-day-num { font-weight: 500; color: var(--text-secondary); margin-bottom: 0.15rem; }
+    .cal-task {
+      font-size: 0.55rem;
+      padding: 0.1rem 0.2rem;
+      background: var(--bg-secondary);
+      border-radius: 2px;
+      margin-bottom: 0.1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cal-task.high { border-left: 2px solid var(--danger); }
+    .cal-task.done { opacity: 0.5; text-decoration: line-through; }
+    .review-section {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 0.8rem;
+      margin-bottom: 0.6rem;
+    }
+    .review-title {
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .review-stat {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      padding: 0.25rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .review-stat:last-child { border: none; }
+    .review-stat span:first-child { color: var(--text-secondary); }
+    .review-stat span:last-child { font-weight: 500; }
+    /* Prospects table */
+    .prospect-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .prospect-table th {
+      text-align: left;
+      padding: 0.5rem;
+      background: var(--bg-tertiary);
+      font-weight: 500;
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .prospect-table td {
+      padding: 0.45rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .prospect-table tr:hover { background: var(--bg-secondary); }
+    .prospect-table input {
+      width: 100%;
+      padding: 0.3rem;
+      border: 1px solid transparent;
+      background: transparent;
+      font-size: 0.75rem;
+      color: var(--text-primary);
+      border-radius: 4px;
+    }
+    .prospect-table input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: var(--bg-primary);
+    }
+    .import-area {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .import-area:hover { border-color: var(--accent); background: var(--accent-bg); }
+    .import-area i { font-size: 1.5rem; color: var(--text-tertiary); }
+    .import-area p { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.4rem; }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--bg-primary);
+      border-radius: 12px;
+      padding: 1.25rem;
+      max-width: 450px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.8rem; }
+    .modal-actions { display: flex; gap: 0.4rem; justify-content: flex-end; margin-top: 0.8rem; }
+    .sync-section {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 0.8rem;
+      margin-bottom: 0.6rem;
+    }
+    .sync-title { font-size: 0.8rem; font-weight: 500; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.3rem; }
+    .sync-info { font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+    .sync-key-input { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
+    .sync-key-input input {
+      flex: 1;
+      padding: 0.4rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-family: monospace;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    .footer {
+      text-align: center;
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      margin-top: 1.2rem;
+      padding-top: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+    /* Flatpickr dark mode */
+    @media (prefers-color-scheme: dark) {
+      .flatpickr-calendar { background: var(--bg-primary); border-color: var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+      .flatpickr-months, .flatpickr-weekdays { background: var(--bg-secondary); }
+      .flatpickr-month, span.flatpickr-weekday, .flatpickr-current-month .flatpickr-monthDropdown-months { color: var(--text-primary); background: transparent; }
+      .flatpickr-day { color: var(--text-primary); }
+      .flatpickr-day:hover { background: var(--bg-tertiary); border-color: var(--bg-tertiary); }
+      .flatpickr-day.selected { background: var(--accent); border-color: var(--accent); }
+      .flatpickr-day.today { border-color: var(--accent); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo"><i class="ti ti-checkbox"></i> Task Dashboard</div>
+      <div class="header-actions">
+        <div class="view-toggle">
+          <button class="view-btn active" onclick="setView('list')" id="view-list"><i class="ti ti-list"></i></button>
+          <button class="view-btn" onclick="setView('kanban')" id="view-kanban"><i class="ti ti-layout-kanban"></i></button>
+          <button class="view-btn" onclick="setView('calendar')" id="view-calendar"><i class="ti ti-calendar"></i></button>
+        </div>
+        <button class="btn" onclick="exportCSV()"><i class="ti ti-download"></i> Export</button>
+        <button class="btn" onclick="showSyncModal()"><i class="ti ti-cloud"></i> Sync</button>
+      </div>
+    </div>
+    <div id="stats"></div>
+    <div id="tabs"></div>
+    <div class="card" id="content"></div>
+    <div class="footer">Data saves locally · Use Sync for backup or cross-device access</div>
+  </div>
+
+  <div class="modal-overlay" id="syncModal">
+    <div class="modal">
+      <div class="modal-title"><i class="ti ti-cloud"></i> Sync & Backup</div>
+      <div class="sync-section">
+        <div class="sync-title"><i class="ti ti-download"></i> Export</div>
+        <div class="sync-info">Download all data as JSON backup.</div>
+        <button class="btn" onclick="exportJSON()"><i class="ti ti-file-download"></i> Download</button>
+      </div>
+      <div class="sync-section">
+        <div class="sync-title"><i class="ti ti-upload"></i> Import</div>
+        <div class="sync-info">Restore from backup (replaces current data).</div>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+        <button class="btn" onclick="document.getElementById('importFile').click()"><i class="ti ti-file-upload"></i> Import</button>
+      </div>
+      <div class="sync-section">
+        <div class="sync-title"><i class="ti ti-link"></i> Sync Key</div>
+        <div class="sync-info">Use same key on all devices to sync.</div>
+        <div class="sync-key-input">
+          <input type="text" id="syncKeyInput" placeholder="Enter sync key...">
+          <button class="btn btn-primary" onclick="setSyncKey()">Save</button>
+        </div>
+        <div style="font-size:0.65rem;color:var(--text-tertiary);margin-top:0.4rem" id="currentSyncKey"></div>
+      </div>
+      <div class="modal-actions"><button class="btn" onclick="closeSyncModal()">Close</button></div>
+    </div>
+  </div>
+
+  <input type="file" id="excelImport" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(event)">
+
+  <script>
+    let data = { goals: [], today: [], week: [], clients: {}, prospects: { _columns: ['Company', 'Contact', 'Email', 'Status', 'Notes'], _rows: [] }, questions: [] };
+    let activeTab = 'goals';
+    let viewMode = 'list';
+    let syncKey = localStorage.getItem('syncKey') || '';
+    const STORAGE_KEY = 'consultant-dashboard-v2';
+
+    function loadData() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          data = JSON.parse(saved);
+          if (!data.prospects) data.prospects = { _columns: ['Company', 'Contact', 'Email', 'Status', 'Notes'], _rows: [] };
+          if (!data.prospects._columns) data.prospects._columns = ['Company', 'Contact', 'Email', 'Status', 'Notes'];
+          if (!data.prospects._rows) data.prospects._rows = [];
+          ['goals', 'today', 'week', 'questions'].forEach(k => { if (!data[k]) data[k] = []; });
+          if (!data.clients) data.clients = {};
+        }
+      } catch (e) { console.error('Load failed:', e); }
+      render();
+      initDatePickers();
+    }
+
+    function saveData() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        if (syncKey) saveToRemote();
+      } catch (e) { console.error('Save failed:', e); }
+    }
+
+    async function saveToRemote() {
+      if (!syncKey) return;
+      try {
+        const binId = localStorage.getItem('syncBinId');
+        const url = binId ? `https://api.jsonbin.io/v3/b/${binId}` : 'https://api.jsonbin.io/v3/b';
+        const res = await fetch(url, {
+          method: binId ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Master-Key': '$2a$10$' + btoa(syncKey).substring(0, 30), 'X-Bin-Private': 'true' },
+          body: JSON.stringify(data)
+        });
+        if (res.ok && !binId) {
+          const result = await res.json();
+          localStorage.setItem('syncBinId', result.metadata.id);
+        }
+      } catch (e) { console.log('Sync failed:', e); }
+    }
+
+    async function loadFromRemote() {
+      if (!syncKey) return false;
+      try {
+        const binId = localStorage.getItem('syncBinId');
+        if (!binId) return false;
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+          headers: { 'X-Master-Key': '$2a$10$' + btoa(syncKey).substring(0, 30) }
+        });
+        if (res.ok) {
+          const result = await res.json();
+          data = result.record;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          return true;
+        }
+      } catch (e) { console.log('Remote load failed:', e); }
+      return false;
+    }
+
+    function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+    function formatDate(iso) { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+    function isOverdue(due) { if (!due) return false; const d = new Date(due); d.setHours(23,59,59); return d < new Date(); }
+    function isDueSoon(due) { if (!due) return false; const d = new Date(due), diff = (d - new Date()) / (1000*60*60*24); return diff >= 0 && diff <= 2; }
+    function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+    function getAllTasks() {
+      return [...data.goals, ...data.today, ...data.week, ...data.questions, ...Object.values(data.clients).flat()];
+    }
+
+    function getStats() {
+      const all = getAllTasks();
+      return {
+        goalsActive: data.goals.filter(t => !t.done).length,
+        overdue: all.filter(t => !t.done && isOverdue(t.due)).length,
+        pending: all.filter(t => !t.done).length,
+        done: all.filter(t => t.done).length
+      };
+    }
+
+    function addTask(list, text, priority = 'med', dueDate = null, client = null) {
+      if (!text.trim()) return;
+      const task = { id: genId(), text: text.trim(), done: false, priority, due: dueDate || null, created: new Date().toISOString() };
+      if (Array.isArray(data[list])) data[list].unshift(task);
+      else if (client && data[list][client]) data[list][client].unshift(task);
+      saveData(); render(); initDatePickers();
+    }
+
+    function toggleTask(list, id, client = null) {
+      let arr = Array.isArray(data[list]) ? data[list] : (client ? data[list][client] : null);
+      if (!arr) return;
+      const task = arr.find(t => t.id === id);
+      if (task) { task.done = !task.done; if (task.done) task.completedAt = new Date().toISOString(); }
+      saveData(); render(); initDatePickers();
+    }
+
+    function deleteTask(list, id, client = null) {
+      if (Array.isArray(data[list])) data[list] = data[list].filter(t => t.id !== id);
+      else if (client && data[list][client]) data[list][client] = data[list][client].filter(t => t.id !== id);
+      saveData(); render(); initDatePickers();
+    }
+
+    function addClient(inputId) {
+      const input = document.getElementById(inputId);
+      const name = input.value.trim();
+      if (!name || data.clients[name]) return;
+      data.clients[name] = [];
+      input.value = '';
+      saveData(); render(); initDatePickers();
+    }
+
+    function deleteClient(name) {
+      if (confirm(`Delete ${name} and all tasks?`)) { delete data.clients[name]; saveData(); render(); initDatePickers(); }
+    }
+
+    // Prospects table functions
+    function addProspectRow() {
+      const row = {};
+      data.prospects._columns.forEach(col => row[col] = '');
+      row._id = genId();
+      data.prospects._rows.push(row);
+      saveData(); render(); initDatePickers();
+    }
+
+    function updateProspectCell(rowId, col, value) {
+      const row = data.prospects._rows.find(r => r._id === rowId);
+      if (row) { row[col] = value; saveData(); }
+    }
+
+    function deleteProspectRow(rowId) {
+      data.prospects._rows = data.prospects._rows.filter(r => r._id !== rowId);
+      saveData(); render(); initDatePickers();
+    }
+
+    function addProspectColumn() {
+      const name = prompt('Column name:');
+      if (name && !data.prospects._columns.includes(name)) {
+        data.prospects._columns.push(name);
+        data.prospects._rows.forEach(r => r[name] = '');
+        saveData(); render(); initDatePickers();
+      }
+    }
+
+    function deleteProspectColumn(col) {
+      if (data.prospects._columns.length <= 1) return alert('Need at least one column');
+      if (confirm(`Delete column "${col}"?`)) {
+        data.prospects._columns = data.prospects._columns.filter(c => c !== col);
+        data.prospects._rows.forEach(r => delete r[col]);
+        saveData(); render(); initDatePickers();
+      }
+    }
+
+    function importExcel(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(ws, { header: 1 });
+          if (json.length < 1) return alert('Empty file');
+          
+          const headers = json[0].map(h => String(h || 'Column').trim());
+          const rows = json.slice(1).filter(r => r.some(c => c)).map(r => {
+            const row = { _id: genId() };
+            headers.forEach((h, i) => row[h] = String(r[i] || ''));
+            return row;
+          });
+          
+          data.prospects._columns = headers;
+          data.prospects._rows = rows;
+          saveData(); render(); initDatePickers();
+          alert(`Imported ${rows.length} prospects with columns: ${headers.join(', ')}`);
+        } catch (err) {
+          alert('Error reading file: ' + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+      event.target.value = '';
+    }
+
+    function setView(mode) {
+      viewMode = mode;
+      document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`view-${mode}`).classList.add('active');
+      render(); initDatePickers();
+    }
+
+    function setTab(tab) { activeTab = tab; render(); initDatePickers(); }
+
+    function initDatePickers() {
+      setTimeout(() => {
+        document.querySelectorAll('.date-input').forEach(el => {
+          if (!el._flatpickr) {
+            flatpickr(el, {
+              dateFormat: 'Y-m-d',
+              allowInput: true,
+              disableMobile: true
+            });
+          }
+        });
+      }, 50);
+    }
+
+    function exportCSV() {
+      const rows = [['Type', 'Text', 'Priority', 'Due', 'Status', 'Created', 'Client']];
+      ['goals', 'today', 'week', 'questions'].forEach(list => {
+        data[list].forEach(t => rows.push([list, t.text, t.priority || '', t.due || '', t.done ? 'Done' : 'Pending', t.created, '']));
+      });
+      Object.entries(data.clients).forEach(([name, tasks]) => {
+        tasks.forEach(t => rows.push(['Client', t.text, t.priority || '', t.due || '', t.done ? 'Done' : 'Pending', t.created, name]));
+      });
+      // Add prospects
+      if (data.prospects._rows.length) {
+        rows.push([]);
+        rows.push(['PROSPECTS', ...data.prospects._columns.slice(1)]);
+        data.prospects._rows.forEach(r => {
+          rows.push(data.prospects._columns.map(c => r[c] || ''));
+        });
+      }
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+      downloadFile(csv, `tasks-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+    }
+
+    function exportJSON() { downloadFile(JSON.stringify(data, null, 2), `backup-${new Date().toISOString().split('T')[0]}.json`, 'application/json'); }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          if (confirm('Replace all current data?')) {
+            data = JSON.parse(e.target.result);
+            saveData(); render(); initDatePickers();
+            alert('Imported successfully!');
+          }
+        } catch (err) { alert('Invalid file'); }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function downloadFile(content, filename, type) {
+      const blob = new Blob([content], { type });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+    }
+
+    function showSyncModal() {
+      document.getElementById('syncModal').classList.add('active');
+      document.getElementById('syncKeyInput').value = syncKey;
+      document.getElementById('currentSyncKey').textContent = syncKey ? `Key: ${syncKey.substring(0, 10)}...` : 'No key set';
+    }
+    function closeSyncModal() { document.getElementById('syncModal').classList.remove('active'); }
+    function setSyncKey() {
+      syncKey = document.getElementById('syncKeyInput').value.trim();
+      localStorage.setItem('syncKey', syncKey);
+      if (syncKey) { saveToRemote(); alert('Sync key saved!'); }
+      document.getElementById('currentSyncKey').textContent = syncKey ? `Key: ${syncKey.substring(0, 10)}...` : 'No key set';
+    }
+
+    function renderTaskMeta(t) {
+      let meta = formatDate(t.created);
+      if (t.due) {
+        const overdue = isOverdue(t.due) && !t.done;
+        const soon = isDueSoon(t.due) && !t.done;
+        meta += ` · <span class="${overdue ? 'overdue' : (soon ? 'due-soon' : '')}">Due ${formatDate(t.due)}${overdue ? ' (overdue)' : ''}</span>`;
+      }
+      return meta;
+    }
+
+    function renderTask(t, list, clientName = null) {
+      const overdue = isOverdue(t.due) && !t.done;
+      const clientArg = clientName ? `,'${clientName.replace(/'/g, "\\'")}'` : '';
+      return `<div class="task ${t.done ? 'done' : ''} priority-${t.priority || 'med'} ${overdue ? 'overdue' : ''}">
+        <div class="checkbox ${t.done ? 'checked' : ''}" onclick="toggleTask('${list}','${t.id}'${clientArg})">${t.done ? '<i class="ti ti-check" style="font-size:11px"></i>' : ''}</div>
+        <div class="task-content">
+          <div class="task-text">${escapeHtml(t.text)}</div>
+          <div class="task-meta">${renderTaskMeta(t)}</div>
+        </div>
+        <div class="task-actions"><button class="task-btn" onclick="deleteTask('${list}','${t.id}'${clientArg})"><i class="ti ti-trash"></i></button></div>
+      </div>`;
+    }
+
+    function renderTaskList(list, tasks, clientName = null) {
+      if (!tasks || !tasks.length) return '<div class="empty">No tasks yet</div>';
+      return '<div class="task-list">' + tasks.map(t => renderTask(t, list, clientName)).join('') + '</div>';
+    }
+
+    function renderKanban(tasks, list) {
+      const todo = tasks.filter(t => !t.done);
+      const high = todo.filter(t => t.priority === 'high');
+      const other = todo.filter(t => t.priority !== 'high');
+      const done = tasks.filter(t => t.done);
+      return `<div class="kanban">
+        <div class="kanban-col"><div class="kanban-title"><i class="ti ti-alert-circle" style="color:var(--danger)"></i> High (${high.length})</div>${high.map(t => renderTask(t, list)).join('')}</div>
+        <div class="kanban-col"><div class="kanban-title"><i class="ti ti-clock" style="color:var(--warning)"></i> To do (${other.length})</div>${other.map(t => renderTask(t, list)).join('')}</div>
+        <div class="kanban-col"><div class="kanban-title"><i class="ti ti-check" style="color:var(--success)"></i> Done (${done.length})</div>${done.map(t => renderTask(t, list)).join('')}</div>
+      </div>`;
+    }
+
+    function renderCalendar(tasks) {
+      const today = new Date();
+      const start = new Date(today); start.setDate(today.getDate() - today.getDay());
+      const days = [];
+      for (let i = 0; i < 14; i++) { const d = new Date(start); d.setDate(start.getDate() + i); days.push(d); }
+      const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      let html = '<div class="calendar">';
+      dayNames.forEach(n => html += `<div class="cal-header">${n}</div>`);
+      days.forEach(d => {
+        const dateStr = d.toISOString().split('T')[0];
+        const isToday = d.toDateString() === today.toDateString();
+        const dayTasks = tasks.filter(t => t.due === dateStr);
+        html += `<div class="cal-day ${isToday ? 'today' : ''}">
+          <div class="cal-day-num">${d.getDate()}</div>
+          ${dayTasks.slice(0,3).map(t => `<div class="cal-task ${t.priority === 'high' ? 'high' : ''} ${t.done ? 'done' : ''}">${escapeHtml(t.text)}</div>`).join('')}
+          ${dayTasks.length > 3 ? `<div class="cal-task">+${dayTasks.length-3}</div>` : ''}
+        </div>`;
+      });
+      return html + '</div>';
+    }
+
+    function renderInputRow(list, placeholder, clientName = null) {
+      const base = list + (clientName || '').replace(/[^a-zA-Z0-9]/g, '');
+      const clientArg = clientName ? `,'${clientName.replace(/'/g, "\\'")}'` : '';
+      return `<div class="input-row">
+        <input type="text" id="${base}-txt" placeholder="${placeholder}" onkeypress="if(event.key==='Enter'){addTask('${list}',document.getElementById('${base}-txt').value,document.getElementById('${base}-pri').value,document.getElementById('${base}-due').value||null${clientArg});document.getElementById('${base}-txt').value='';document.getElementById('${base}-due').value=''}">
+        <input type="text" class="date-input" id="${base}-due" placeholder="Due date">
+        <select id="${base}-pri"><option value="high">High</option><option value="med" selected>Med</option><option value="low">Low</option></select>
+        <button class="btn btn-primary" onclick="addTask('${list}',document.getElementById('${base}-txt').value,document.getElementById('${base}-pri').value,document.getElementById('${base}-due').value||null${clientArg});document.getElementById('${base}-txt').value='';document.getElementById('${base}-due').value=''">Add</button>
+      </div>`;
+    }
+
+    function renderProspectsTable() {
+      const cols = data.prospects._columns;
+      const rows = data.prospects._rows;
+      return `
+        <div style="display:flex;gap:0.4rem;margin-bottom:0.8rem;flex-wrap:wrap">
+          <button class="btn" onclick="document.getElementById('excelImport').click()"><i class="ti ti-file-import"></i> Import Excel</button>
+          <button class="btn" onclick="addProspectRow()"><i class="ti ti-plus"></i> Add Row</button>
+          <button class="btn" onclick="addProspectColumn()"><i class="ti ti-columns"></i> Add Column</button>
+        </div>
+        ${rows.length === 0 ? `
+          <div class="import-area" onclick="document.getElementById('excelImport').click()">
+            <i class="ti ti-file-spreadsheet"></i>
+            <p>Import Excel/CSV or click "Add Row" to start</p>
+          </div>
+        ` : `
+          <div style="overflow-x:auto">
+            <table class="prospect-table">
+              <thead><tr>
+                ${cols.map(c => `<th>${escapeHtml(c)} <button class="task-btn" onclick="deleteProspectColumn('${c.replace(/'/g, "\\'")}')" style="opacity:0.5;font-size:0.7rem"><i class="ti ti-x"></i></button></th>`).join('')}
+                <th style="width:40px"></th>
+              </tr></thead>
+              <tbody>
+                ${rows.map(r => `<tr>
+                  ${cols.map(c => `<td><input value="${escapeHtml(r[c] || '')}" onchange="updateProspectCell('${r._id}','${c.replace(/'/g, "\\'")}',this.value)"></td>`).join('')}
+                  <td><button class="task-btn" onclick="deleteProspectRow('${r._id}')"><i class="ti ti-trash"></i></button></td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        `}
+      `;
+    }
+
+    function renderContent() {
+      const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const today = new Date();
+
+      switch (activeTab) {
+        case 'goals':
+          return `<div class="section-header"><i class="ti ti-target"></i> Goals & Objectives</div>
+            ${renderInputRow('goals', 'Add a goal...')}
+            ${viewMode === 'kanban' ? renderKanban(data.goals, 'goals') : renderTaskList('goals', data.goals)}`;
+
+        case 'today':
+          return `<div class="section-header"><i class="ti ti-sun"></i> ${days[today.getDay()]}, ${today.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</div>
+            ${renderInputRow('today', 'Add task for today...')}
+            ${viewMode === 'kanban' ? renderKanban(data.today, 'today') : viewMode === 'calendar' ? renderCalendar(data.today) : renderTaskList('today', data.today)}`;
+
+        case 'week':
+          return `<div class="section-header"><i class="ti ti-calendar-week"></i> This Week</div>
+            ${renderInputRow('week', 'Add task for this week...')}
+            ${viewMode === 'kanban' ? renderKanban(data.week, 'week') : viewMode === 'calendar' ? renderCalendar(data.week) : renderTaskList('week', data.week)}`;
+
+        case 'clients':
+          const names = Object.keys(data.clients);
+          return `<div class="client-input">
+              <input type="text" id="client-name" placeholder="Add new client..." onkeypress="if(event.key==='Enter')addClient('client-name')">
+              <button class="btn" onclick="addClient('client-name')"><i class="ti ti-plus"></i> Add</button>
+            </div>
+            ${names.length === 0 ? '<div class="empty">No clients yet</div>' : names.map(name => `
+              <div class="client-section">
+                <div class="client-header">
+                  <span><i class="ti ti-building"></i> ${escapeHtml(name)}</span>
+                  <button class="task-btn" onclick="deleteClient('${name.replace(/'/g, "\\'")}')"><i class="ti ti-trash"></i></button>
+                </div>
+                ${renderInputRow('clients', `Add task for ${name}...`, name)}
+                ${viewMode === 'kanban' ? renderKanban(data.clients[name], 'clients') : renderTaskList('clients', data.clients[name], name)}
+              </div>
+            `).join('')}`;
+
+        case 'prospects':
+          return `<div class="section-header"><i class="ti ti-users"></i> Prospects</div>` + renderProspectsTable();
+
+        case 'questions':
+          return `<div class="section-header"><i class="ti ti-help-circle"></i> Questions to Investigate</div>
+            <div class="input-row">
+              <input type="text" id="q-txt" placeholder="Add question..." onkeypress="if(event.key==='Enter'){addTask('questions',document.getElementById('q-txt').value);document.getElementById('q-txt').value=''}">
+              <button class="btn btn-primary" onclick="addTask('questions',document.getElementById('q-txt').value);document.getElementById('q-txt').value=''">Add</button>
+            </div>
+            ${data.questions.length === 0 ? '<div class="empty">No questions yet</div>' : '<div class="task-list">' + data.questions.map(t => `
+              <div class="task ${t.done ? 'done' : ''}">
+                <div class="checkbox ${t.done ? 'checked' : ''}" onclick="toggleTask('questions','${t.id}')">${t.done ? '<i class="ti ti-check" style="font-size:11px"></i>' : ''}</div>
+                <div class="task-content">
+                  <div class="task-text"><span style="color:var(--warning);font-weight:600">?</span> ${escapeHtml(t.text)}</div>
+                  <div class="task-meta">${formatDate(t.created)}</div>
+                </div>
+                <div class="task-actions"><button class="task-btn" onclick="deleteTask('questions','${t.id}')"><i class="ti ti-trash"></i></button></div>
+              </div>
+            `).join('') + '</div>'}`;
+
+        case 'review':
+          const all = getAllTasks();
+          const now = new Date();
+          const weekAgo = new Date(now - 7*24*60*60*1000);
+          const completedThisWeek = all.filter(t => t.done && t.completedAt && new Date(t.completedAt) >= weekAgo).length;
+          const overdue = all.filter(t => !t.done && isOverdue(t.due));
+          const dueSoon = all.filter(t => !t.done && isDueSoon(t.due) && !isOverdue(t.due));
+          return `
+            <div class="review-section">
+              <div class="review-title"><i class="ti ti-report-analytics" style="color:var(--accent)"></i> This Week</div>
+              <div class="review-stat"><span>Completed</span><span style="color:var(--success)">${completedThisWeek}</span></div>
+              <div class="review-stat"><span>Pending</span><span>${all.filter(t => !t.done).length}</span></div>
+              <div class="review-stat"><span>Prospects</span><span>${data.prospects._rows.length}</span></div>
+            </div>
+            ${overdue.length ? `<div class="review-section" style="border-left:3px solid var(--danger)">
+              <div class="review-title" style="color:var(--danger)"><i class="ti ti-alert-triangle"></i> Overdue (${overdue.length})</div>
+              ${overdue.slice(0,5).map(t => `<div style="font-size:0.75rem;padding:0.2rem 0">${escapeHtml(t.text)} · due ${formatDate(t.due)}</div>`).join('')}
+            </div>` : ''}
+            ${dueSoon.length ? `<div class="review-section" style="border-left:3px solid var(--warning)">
+              <div class="review-title" style="color:var(--warning)"><i class="ti ti-clock"></i> Due Soon (${dueSoon.length})</div>
+              ${dueSoon.slice(0,5).map(t => `<div style="font-size:0.75rem;padding:0.2rem 0">${escapeHtml(t.text)} · due ${formatDate(t.due)}</div>`).join('')}
+            </div>` : ''}
+            <div class="review-section">
+              <div class="review-title"><i class="ti ti-building" style="color:var(--accent)"></i> By Client</div>
+              ${Object.entries(data.clients).length === 0 ? '<div style="font-size:0.75rem;color:var(--text-tertiary)">No clients</div>' :
+                Object.entries(data.clients).map(([n, t]) => `<div class="review-stat"><span>${escapeHtml(n)}</span><span>${t.filter(x => !x.done).length} pending</span></div>`).join('')}
+            </div>`;
+
+        default: return '';
+      }
+    }
+
+    function render() {
+      const stats = getStats();
+      document.getElementById('stats').innerHTML = `<div class="stats">
+        <div class="stat"><div class="stat-num">${stats.goalsActive}</div><div class="stat-label">Active Goals</div></div>
+        <div class="stat ${stats.overdue ? 'warning' : ''}"><div class="stat-num">${stats.overdue}</div><div class="stat-label">Overdue</div></div>
+        <div class="stat"><div class="stat-num">${stats.pending}</div><div class="stat-label">Pending</div></div>
+        <div class="stat"><div class="stat-num">${stats.done}</div><div class="stat-label">Done</div></div>
+      </div>`;
+
+      const tabs = [
+        { id: 'goals', label: 'Goals', icon: 'target' },
+        { id: 'today', label: 'Today', icon: 'sun' },
+        { id: 'week', label: 'Week', icon: 'calendar-week' },
+        { id: 'clients', label: 'Clients', icon: 'building' },
+        { id: 'prospects', label: 'Prospects', icon: 'users' },
+        { id: 'questions', label: 'Questions', icon: 'help-circle' },
+        { id: 'review', label: 'Review', icon: 'report-analytics' }
+      ];
+
+      document.getElementById('tabs').innerHTML = `<div class="tabs">
+        ${tabs.map(t => `<button class="tab ${activeTab === t.id ? 'active' : ''}" onclick="setTab('${t.id}')">
+          <i class="ti ti-${t.icon}"></i> ${t.label}
+          ${t.id === 'review' && stats.overdue ? `<span class="badge">${stats.overdue}</span>` : ''}
+        </button>`).join('')}
+      </div>`;
+
+      document.getElementById('content').innerHTML = renderContent();
+    }
+
+    loadData();
+    if (syncKey) loadFromRemote().then(loaded => { if (loaded) { render(); initDatePickers(); } });
+    document.getElementById('syncModal').addEventListener('click', e => { if (e.target.id === 'syncModal') closeSyncModal(); });
+  </script>
+</body>
+</html>
