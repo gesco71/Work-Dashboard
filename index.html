@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <style>
     :root {
       --bg-primary: #ffffff;
@@ -239,6 +241,28 @@
       font-size: 0.85rem;
     }
     .task-btn:hover { color: var(--text-primary); }
+    .priority-badge {
+      font-size: 0.6rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-weight: 500;
+      margin-left: 0.4rem;
+    }
+    .priority-badge.high { background: var(--danger-bg); color: var(--danger); }
+    .priority-badge.med { background: var(--warning); color: #fff; opacity: 0.85; }
+    .priority-badge.low { background: var(--success); color: #fff; opacity: 0.8; }
+    .task-edit-input {
+      width: 100%;
+      padding: 0.4rem;
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      font-size: 0.8rem;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      margin-bottom: 0.3rem;
+    }
+    .edit-actions { display: flex; gap: 0.3rem; }
+    .edit-actions button { padding: 0.25rem 0.5rem; font-size: 0.7rem; }
     .empty {
       padding: 1.5rem;
       text-align: center;
@@ -332,7 +356,6 @@
     .review-stat:last-child { border: none; }
     .review-stat span:first-child { color: var(--text-secondary); }
     .review-stat span:last-child { font-weight: 500; }
-    /* Prospects table */
     .prospect-table {
       width: 100%;
       border-collapse: collapse;
@@ -380,47 +403,6 @@
     .import-area:hover { border-color: var(--accent); background: var(--accent-bg); }
     .import-area i { font-size: 1.5rem; color: var(--text-tertiary); }
     .import-area p { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.4rem; }
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-    .modal-overlay.active { display: flex; }
-    .modal {
-      background: var(--bg-primary);
-      border-radius: 12px;
-      padding: 1.25rem;
-      max-width: 450px;
-      width: 100%;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-    .modal-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.8rem; }
-    .modal-actions { display: flex; gap: 0.4rem; justify-content: flex-end; margin-top: 0.8rem; }
-    .sync-section {
-      background: var(--bg-secondary);
-      border-radius: 8px;
-      padding: 0.8rem;
-      margin-bottom: 0.6rem;
-    }
-    .sync-title { font-size: 0.8rem; font-weight: 500; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.3rem; }
-    .sync-info { font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
-    .sync-key-input { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
-    .sync-key-input input {
-      flex: 1;
-      padding: 0.4rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 0.7rem;
-      font-family: monospace;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-    }
     .footer {
       text-align: center;
       font-size: 0.65rem;
@@ -429,7 +411,18 @@
       padding-top: 0.8rem;
       border-top: 1px solid var(--border);
     }
-    /* Flatpickr dark mode */
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.5rem;
+      background: var(--success);
+      color: white;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      margin-left: 0.5rem;
+    }
+    .sync-status.offline { background: var(--danger); }
     @media (prefers-color-scheme: dark) {
       .flatpickr-calendar { background: var(--bg-primary); border-color: var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
       .flatpickr-months, .flatpickr-weekdays { background: var(--bg-secondary); }
@@ -444,7 +437,10 @@
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo"><i class="ti ti-checkbox"></i> Task Dashboard</div>
+      <div class="logo">
+        <i class="ti ti-checkbox"></i> Task Dashboard
+        <span class="sync-status" id="syncStatus"><i class="ti ti-refresh"></i> Connecting...</span>
+      </div>
       <div class="header-actions">
         <div class="view-toggle">
           <button class="view-btn active" onclick="setView('list')" id="view-list"><i class="ti ti-list"></i></button>
@@ -452,123 +448,146 @@
           <button class="view-btn" onclick="setView('calendar')" id="view-calendar"><i class="ti ti-calendar"></i></button>
         </div>
         <button class="btn" onclick="exportCSV()"><i class="ti ti-download"></i> Export</button>
-        <button class="btn" onclick="showSyncModal()"><i class="ti ti-cloud"></i> Sync</button>
       </div>
     </div>
     <div id="stats"></div>
     <div id="tabs"></div>
     <div class="card" id="content"></div>
-    <div class="footer">Data saves locally · Use Sync for backup or cross-device access</div>
-  </div>
-
-  <div class="modal-overlay" id="syncModal">
-    <div class="modal">
-      <div class="modal-title"><i class="ti ti-cloud"></i> Sync & Backup</div>
-      <div class="sync-section">
-        <div class="sync-title"><i class="ti ti-download"></i> Export</div>
-        <div class="sync-info">Download all data as JSON backup.</div>
-        <button class="btn" onclick="exportJSON()"><i class="ti ti-file-download"></i> Download</button>
-      </div>
-      <div class="sync-section">
-        <div class="sync-title"><i class="ti ti-upload"></i> Import</div>
-        <div class="sync-info">Restore from backup (replaces current data).</div>
-        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
-        <button class="btn" onclick="document.getElementById('importFile').click()"><i class="ti ti-file-upload"></i> Import</button>
-      </div>
-      <div class="sync-section">
-        <div class="sync-title"><i class="ti ti-link"></i> Sync Key</div>
-        <div class="sync-info">Use same key on all devices to sync.</div>
-        <div class="sync-key-input">
-          <input type="text" id="syncKeyInput" placeholder="Enter sync key...">
-          <button class="btn btn-primary" onclick="setSyncKey()">Save</button>
-        </div>
-        <div style="font-size:0.65rem;color:var(--text-tertiary);margin-top:0.4rem" id="currentSyncKey"></div>
-      </div>
-      <div class="modal-actions"><button class="btn" onclick="closeSyncModal()">Close</button></div>
-    </div>
+    <div class="footer">Real-time sync across all devices</div>
   </div>
 
   <input type="file" id="excelImport" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(event)">
 
   <script>
-    let data = { goals: [], today: [], week: [], clients: {}, prospects: { _columns: ['Company', 'Contact', 'Email', 'Status', 'Notes'], _rows: [] }, questions: [] };
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAZGjmWkWZ63cXk0XNZe-b6WZa3GUDkMjI",
+      authDomain: "wdb2026-5cc9c.firebaseapp.com",
+      databaseURL: "https://wdb2026-5cc9c-default-rtdb.firebaseio.com",
+      projectId: "wdb2026-5cc9c",
+      storageBucket: "wdb2026-5cc9c.firebasestorage.app",
+      messagingSenderId: "569336803850",
+      appId: "1:569336803850:web:ed9c96dcc107820b0f25f3"
+    };
+
+    // Initialize Firebase
+    let db = null;
+    let dataRef = null;
+    let isOnline = false;
+
+    const defaultData = { 
+      goals: [], 
+      today: [], 
+      week: [], 
+      clients: {}, 
+      prospects: { _columns: ['Company', 'Contact', 'Email', 'Status', 'Notes'], _rows: [] }, 
+      questions: [] 
+    };
+
+    let data = JSON.parse(JSON.stringify(defaultData));
     let activeTab = 'goals';
     let viewMode = 'list';
-    let syncKey = localStorage.getItem('syncKey') || '';
-    const STORAGE_KEY = 'consultant-dashboard-v2';
+    let editingTask = null;
 
-    function loadData() {
+    function initFirebase() {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          data = JSON.parse(saved);
-          if (!data.prospects) data.prospects = { _columns: ['Company', 'Contact', 'Email', 'Status', 'Notes'], _rows: [] };
-          if (!data.prospects._columns) data.prospects._columns = ['Company', 'Contact', 'Email', 'Status', 'Notes'];
-          if (!data.prospects._rows) data.prospects._rows = [];
-          ['goals', 'today', 'week', 'questions'].forEach(k => { if (!data[k]) data[k] = []; });
-          if (!data.clients) data.clients = {};
-        }
-      } catch (e) { console.error('Load failed:', e); }
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.database();
+        dataRef = db.ref('task-dashboard');
+        
+        // Listen for real-time updates
+        dataRef.on('value', (snapshot) => {
+          const val = snapshot.val();
+          if (val) {
+            data = val;
+            // Ensure all required fields exist
+            if (!data.prospects) data.prospects = { _columns: ['Company', 'Contact', 'Email', 'Status', 'Notes'], _rows: [] };
+            if (!data.prospects._columns) data.prospects._columns = ['Company', 'Contact', 'Email', 'Status', 'Notes'];
+            if (!data.prospects._rows) data.prospects._rows = [];
+            ['goals', 'today', 'week', 'questions'].forEach(k => { if (!data[k]) data[k] = []; });
+            if (!data.clients) data.clients = {};
+          }
+          render();
+          initDatePickers();
+        });
+
+        // Connection state
+        db.ref('.info/connected').on('value', (snap) => {
+          isOnline = snap.val() === true;
+          updateSyncStatus();
+        });
+
+      } catch (e) {
+        console.error('Firebase init failed:', e);
+        // Fall back to localStorage
+        loadFromLocalStorage();
+      }
+    }
+
+    function updateSyncStatus() {
+      const el = document.getElementById('syncStatus');
+      if (isOnline) {
+        el.innerHTML = '<i class="ti ti-cloud-check"></i> Live';
+        el.className = 'sync-status';
+      } else {
+        el.innerHTML = '<i class="ti ti-cloud-off"></i> Offline';
+        el.className = 'sync-status offline';
+      }
+    }
+
+    function saveData() {
+      if (dataRef) {
+        dataRef.set(data);
+      } else {
+        localStorage.setItem('task-dashboard-backup', JSON.stringify(data));
+      }
+    }
+
+    function loadFromLocalStorage() {
+      try {
+        const saved = localStorage.getItem('task-dashboard-backup');
+        if (saved) data = JSON.parse(saved);
+      } catch (e) { console.error('LocalStorage load failed:', e); }
       render();
       initDatePickers();
     }
 
-    function saveData() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        if (syncKey) saveToRemote();
-      } catch (e) { console.error('Save failed:', e); }
-    }
-
-    async function saveToRemote() {
-      if (!syncKey) return;
-      try {
-        const binId = localStorage.getItem('syncBinId');
-        const url = binId ? `https://api.jsonbin.io/v3/b/${binId}` : 'https://api.jsonbin.io/v3/b';
-        const res = await fetch(url, {
-          method: binId ? 'PUT' : 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Master-Key': '$2a$10$' + btoa(syncKey).substring(0, 30), 'X-Bin-Private': 'true' },
-          body: JSON.stringify(data)
-        });
-        if (res.ok && !binId) {
-          const result = await res.json();
-          localStorage.setItem('syncBinId', result.metadata.id);
-        }
-      } catch (e) { console.log('Sync failed:', e); }
-    }
-
-    async function loadFromRemote() {
-      if (!syncKey) return false;
-      try {
-        const binId = localStorage.getItem('syncBinId');
-        if (!binId) return false;
-        const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-          headers: { 'X-Master-Key': '$2a$10$' + btoa(syncKey).substring(0, 30) }
-        });
-        if (res.ok) {
-          const result = await res.json();
-          data = result.record;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-          return true;
-        }
-      } catch (e) { console.log('Remote load failed:', e); }
-      return false;
-    }
-
     function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
-    function formatDate(iso) { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
-    function isOverdue(due) { if (!due) return false; const d = new Date(due); d.setHours(23,59,59); return d < new Date(); }
-    function isDueSoon(due) { if (!due) return false; const d = new Date(due), diff = (d - new Date()) / (1000*60*60*24); return diff >= 0 && diff <= 2; }
+    
+    function formatDate(iso) { 
+      return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); 
+    }
+    function formatDueDate(due) {
+      if (!due) return '';
+      const parts = due.split('-');
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    function isOverdue(due) { 
+      if (!due) return false; 
+      const parts = due.split('-');
+      const d = new Date(parts[0], parts[1] - 1, parts[2], 23, 59, 59);
+      return d < new Date(); 
+    }
+    function isDueSoon(due) { 
+      if (!due) return false; 
+      const parts = due.split('-');
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const diff = (d - now) / (1000*60*60*24); 
+      return diff >= 0 && diff <= 2; 
+    }
     function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 
     function getAllTasks() {
-      return [...data.goals, ...data.today, ...data.week, ...data.questions, ...Object.values(data.clients).flat()];
+      return [...(data.goals||[]), ...(data.today||[]), ...(data.week||[]), ...(data.questions||[]), ...Object.values(data.clients||{}).flat()];
     }
 
     function getStats() {
       const all = getAllTasks();
       return {
-        goalsActive: data.goals.filter(t => !t.done).length,
+        goalsActive: (data.goals||[]).filter(t => !t.done).length,
         overdue: all.filter(t => !t.done && isOverdue(t.due)).length,
         pending: all.filter(t => !t.done).length,
         done: all.filter(t => t.done).length
@@ -579,71 +598,101 @@
       if (!text.trim()) return;
       const task = { id: genId(), text: text.trim(), done: false, priority, due: dueDate || null, created: new Date().toISOString() };
       if (Array.isArray(data[list])) data[list].unshift(task);
-      else if (client && data[list][client]) data[list][client].unshift(task);
-      saveData(); render(); initDatePickers();
+      else if (client && data[list] && data[list][client]) data[list][client].unshift(task);
+      saveData();
     }
 
     function toggleTask(list, id, client = null) {
-      let arr = Array.isArray(data[list]) ? data[list] : (client ? data[list][client] : null);
+      let arr = Array.isArray(data[list]) ? data[list] : (client && data[list] ? data[list][client] : null);
       if (!arr) return;
       const task = arr.find(t => t.id === id);
       if (task) { task.done = !task.done; if (task.done) task.completedAt = new Date().toISOString(); }
-      saveData(); render(); initDatePickers();
+      saveData();
     }
 
     function deleteTask(list, id, client = null) {
       if (Array.isArray(data[list])) data[list] = data[list].filter(t => t.id !== id);
-      else if (client && data[list][client]) data[list][client] = data[list][client].filter(t => t.id !== id);
-      saveData(); render(); initDatePickers();
+      else if (client && data[list] && data[list][client]) data[list][client] = data[list][client].filter(t => t.id !== id);
+      saveData();
     }
+
+    function startEdit(list, id, client = null) {
+      editingTask = { list, id, client };
+      render(); initDatePickers();
+      setTimeout(() => {
+        const input = document.getElementById('edit-input-' + id);
+        if (input) { input.focus(); input.select(); }
+      }, 50);
+    }
+
+    function saveEdit(list, id, client = null) {
+      const input = document.getElementById('edit-input-' + id);
+      const prioritySelect = document.getElementById('edit-priority-' + id);
+      if (!input) return;
+      let arr = Array.isArray(data[list]) ? data[list] : (client && data[list] ? data[list][client] : null);
+      if (!arr) return;
+      const task = arr.find(t => t.id === id);
+      if (task && input.value.trim()) {
+        task.text = input.value.trim();
+        if (prioritySelect) task.priority = prioritySelect.value;
+      }
+      editingTask = null;
+      saveData();
+    }
+
+    function cancelEdit() { editingTask = null; render(); initDatePickers(); }
 
     function addClient(inputId) {
       const input = document.getElementById(inputId);
       const name = input.value.trim();
-      if (!name || data.clients[name]) return;
+      if (!name || (data.clients && data.clients[name])) return;
+      if (!data.clients) data.clients = {};
       data.clients[name] = [];
       input.value = '';
-      saveData(); render(); initDatePickers();
+      saveData();
     }
 
     function deleteClient(name) {
-      if (confirm(`Delete ${name} and all tasks?`)) { delete data.clients[name]; saveData(); render(); initDatePickers(); }
+      if (confirm(`Delete ${name} and all tasks?`)) { 
+        delete data.clients[name]; 
+        saveData();
+      }
     }
 
-    // Prospects table functions
     function addProspectRow() {
-      const row = {};
-      data.prospects._columns.forEach(col => row[col] = '');
-      row._id = genId();
+      const row = { _id: genId() };
+      (data.prospects._columns || []).forEach(col => row[col] = '');
+      if (!data.prospects._rows) data.prospects._rows = [];
       data.prospects._rows.push(row);
-      saveData(); render(); initDatePickers();
+      saveData();
     }
 
     function updateProspectCell(rowId, col, value) {
-      const row = data.prospects._rows.find(r => r._id === rowId);
+      const row = (data.prospects._rows || []).find(r => r._id === rowId);
       if (row) { row[col] = value; saveData(); }
     }
 
     function deleteProspectRow(rowId) {
-      data.prospects._rows = data.prospects._rows.filter(r => r._id !== rowId);
-      saveData(); render(); initDatePickers();
+      data.prospects._rows = (data.prospects._rows || []).filter(r => r._id !== rowId);
+      saveData();
     }
 
     function addProspectColumn() {
       const name = prompt('Column name:');
-      if (name && !data.prospects._columns.includes(name)) {
+      if (name && !(data.prospects._columns || []).includes(name)) {
+        if (!data.prospects._columns) data.prospects._columns = [];
         data.prospects._columns.push(name);
-        data.prospects._rows.forEach(r => r[name] = '');
-        saveData(); render(); initDatePickers();
+        (data.prospects._rows || []).forEach(r => r[name] = '');
+        saveData();
       }
     }
 
     function deleteProspectColumn(col) {
-      if (data.prospects._columns.length <= 1) return alert('Need at least one column');
+      if ((data.prospects._columns || []).length <= 1) return alert('Need at least one column');
       if (confirm(`Delete column "${col}"?`)) {
-        data.prospects._columns = data.prospects._columns.filter(c => c !== col);
-        data.prospects._rows.forEach(r => delete r[col]);
-        saveData(); render(); initDatePickers();
+        data.prospects._columns = (data.prospects._columns || []).filter(c => c !== col);
+        (data.prospects._rows || []).forEach(r => delete r[col]);
+        saveData();
       }
     }
 
@@ -657,21 +706,17 @@
           const ws = wb.Sheets[wb.SheetNames[0]];
           const json = XLSX.utils.sheet_to_json(ws, { header: 1 });
           if (json.length < 1) return alert('Empty file');
-          
           const headers = json[0].map(h => String(h || 'Column').trim());
           const rows = json.slice(1).filter(r => r.some(c => c)).map(r => {
             const row = { _id: genId() };
             headers.forEach((h, i) => row[h] = String(r[i] || ''));
             return row;
           });
-          
           data.prospects._columns = headers;
           data.prospects._rows = rows;
-          saveData(); render(); initDatePickers();
+          saveData();
           alert(`Imported ${rows.length} prospects with columns: ${headers.join(', ')}`);
-        } catch (err) {
-          alert('Error reading file: ' + err.message);
-        }
+        } catch (err) { alert('Error reading file: ' + err.message); }
       };
       reader.readAsArrayBuffer(file);
       event.target.value = '';
@@ -690,11 +735,7 @@
       setTimeout(() => {
         document.querySelectorAll('.date-input').forEach(el => {
           if (!el._flatpickr) {
-            flatpickr(el, {
-              dateFormat: 'Y-m-d',
-              allowInput: true,
-              disableMobile: true
-            });
+            flatpickr(el, { dateFormat: 'Y-m-d', allowInput: true, disableMobile: false });
           }
         });
       }, 50);
@@ -703,61 +744,24 @@
     function exportCSV() {
       const rows = [['Type', 'Text', 'Priority', 'Due', 'Status', 'Created', 'Client']];
       ['goals', 'today', 'week', 'questions'].forEach(list => {
-        data[list].forEach(t => rows.push([list, t.text, t.priority || '', t.due || '', t.done ? 'Done' : 'Pending', t.created, '']));
+        (data[list]||[]).forEach(t => rows.push([list, t.text, t.priority || '', t.due || '', t.done ? 'Done' : 'Pending', t.created, '']));
       });
-      Object.entries(data.clients).forEach(([name, tasks]) => {
+      Object.entries(data.clients||{}).forEach(([name, tasks]) => {
         tasks.forEach(t => rows.push(['Client', t.text, t.priority || '', t.due || '', t.done ? 'Done' : 'Pending', t.created, name]));
       });
-      // Add prospects
-      if (data.prospects._rows.length) {
+      if ((data.prospects._rows||[]).length) {
         rows.push([]);
-        rows.push(['PROSPECTS', ...data.prospects._columns.slice(1)]);
-        data.prospects._rows.forEach(r => {
-          rows.push(data.prospects._columns.map(c => r[c] || ''));
+        rows.push(['PROSPECTS', ...(data.prospects._columns||[]).slice(1)]);
+        (data.prospects._rows||[]).forEach(r => {
+          rows.push((data.prospects._columns||[]).map(c => r[c] || ''));
         });
       }
       const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-      downloadFile(csv, `tasks-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
-    }
-
-    function exportJSON() { downloadFile(JSON.stringify(data, null, 2), `backup-${new Date().toISOString().split('T')[0]}.json`, 'application/json'); }
-
-    function importJSON(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          if (confirm('Replace all current data?')) {
-            data = JSON.parse(e.target.result);
-            saveData(); render(); initDatePickers();
-            alert('Imported successfully!');
-          }
-        } catch (err) { alert('Invalid file'); }
-      };
-      reader.readAsText(file);
-      event.target.value = '';
-    }
-
-    function downloadFile(content, filename, type) {
-      const blob = new Blob([content], { type });
+      const blob = new Blob([csv], { type: 'text/csv' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = filename;
+      a.download = `tasks-${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
-    }
-
-    function showSyncModal() {
-      document.getElementById('syncModal').classList.add('active');
-      document.getElementById('syncKeyInput').value = syncKey;
-      document.getElementById('currentSyncKey').textContent = syncKey ? `Key: ${syncKey.substring(0, 10)}...` : 'No key set';
-    }
-    function closeSyncModal() { document.getElementById('syncModal').classList.remove('active'); }
-    function setSyncKey() {
-      syncKey = document.getElementById('syncKeyInput').value.trim();
-      localStorage.setItem('syncKey', syncKey);
-      if (syncKey) { saveToRemote(); alert('Sync key saved!'); }
-      document.getElementById('currentSyncKey').textContent = syncKey ? `Key: ${syncKey.substring(0, 10)}...` : 'No key set';
     }
 
     function renderTaskMeta(t) {
@@ -765,7 +769,7 @@
       if (t.due) {
         const overdue = isOverdue(t.due) && !t.done;
         const soon = isDueSoon(t.due) && !t.done;
-        meta += ` · <span class="${overdue ? 'overdue' : (soon ? 'due-soon' : '')}">Due ${formatDate(t.due)}${overdue ? ' (overdue)' : ''}</span>`;
+        meta += ` · <span class="${overdue ? 'overdue' : (soon ? 'due-soon' : '')}">Due ${formatDueDate(t.due)}${overdue ? ' (overdue)' : ''}</span>`;
       }
       return meta;
     }
@@ -773,13 +777,36 @@
     function renderTask(t, list, clientName = null) {
       const overdue = isOverdue(t.due) && !t.done;
       const clientArg = clientName ? `,'${clientName.replace(/'/g, "\\'")}'` : '';
+      const isEditing = editingTask && editingTask.id === t.id;
+      const priorityLabel = { high: 'High', med: 'Med', low: 'Low' }[t.priority] || 'Med';
+      
+      if (isEditing) {
+        return `<div class="task priority-${t.priority || 'med'}">
+          <div style="flex:1">
+            <input type="text" class="task-edit-input" id="edit-input-${t.id}" value="${escapeHtml(t.text)}" onkeypress="if(event.key==='Enter')saveEdit('${list}','${t.id}'${clientArg})" onkeydown="if(event.key==='Escape')cancelEdit()">
+            <div class="edit-actions">
+              <select id="edit-priority-${t.id}">
+                <option value="high" ${t.priority === 'high' ? 'selected' : ''}>High</option>
+                <option value="med" ${t.priority === 'med' || !t.priority ? 'selected' : ''}>Med</option>
+                <option value="low" ${t.priority === 'low' ? 'selected' : ''}>Low</option>
+              </select>
+              <button class="btn btn-primary" onclick="saveEdit('${list}','${t.id}'${clientArg})">Save</button>
+              <button class="btn" onclick="cancelEdit()">Cancel</button>
+            </div>
+          </div>
+        </div>`;
+      }
+      
       return `<div class="task ${t.done ? 'done' : ''} priority-${t.priority || 'med'} ${overdue ? 'overdue' : ''}">
         <div class="checkbox ${t.done ? 'checked' : ''}" onclick="toggleTask('${list}','${t.id}'${clientArg})">${t.done ? '<i class="ti ti-check" style="font-size:11px"></i>' : ''}</div>
         <div class="task-content">
-          <div class="task-text">${escapeHtml(t.text)}</div>
+          <div class="task-text">${escapeHtml(t.text)}<span class="priority-badge ${t.priority || 'med'}">${priorityLabel}</span></div>
           <div class="task-meta">${renderTaskMeta(t)}</div>
         </div>
-        <div class="task-actions"><button class="task-btn" onclick="deleteTask('${list}','${t.id}'${clientArg})"><i class="ti ti-trash"></i></button></div>
+        <div class="task-actions">
+          <button class="task-btn" onclick="startEdit('${list}','${t.id}'${clientArg})" title="Edit"><i class="ti ti-pencil"></i></button>
+          <button class="task-btn" onclick="deleteTask('${list}','${t.id}'${clientArg})" title="Delete"><i class="ti ti-trash"></i></button>
+        </div>
       </div>`;
     }
 
@@ -789,10 +816,10 @@
     }
 
     function renderKanban(tasks, list) {
-      const todo = tasks.filter(t => !t.done);
+      const todo = (tasks||[]).filter(t => !t.done);
       const high = todo.filter(t => t.priority === 'high');
       const other = todo.filter(t => t.priority !== 'high');
-      const done = tasks.filter(t => t.done);
+      const done = (tasks||[]).filter(t => t.done);
       return `<div class="kanban">
         <div class="kanban-col"><div class="kanban-title"><i class="ti ti-alert-circle" style="color:var(--danger)"></i> High (${high.length})</div>${high.map(t => renderTask(t, list)).join('')}</div>
         <div class="kanban-col"><div class="kanban-title"><i class="ti ti-clock" style="color:var(--warning)"></i> To do (${other.length})</div>${other.map(t => renderTask(t, list)).join('')}</div>
@@ -811,7 +838,7 @@
       days.forEach(d => {
         const dateStr = d.toISOString().split('T')[0];
         const isToday = d.toDateString() === today.toDateString();
-        const dayTasks = tasks.filter(t => t.due === dateStr);
+        const dayTasks = (tasks||[]).filter(t => t.due === dateStr);
         html += `<div class="cal-day ${isToday ? 'today' : ''}">
           <div class="cal-day-num">${d.getDate()}</div>
           ${dayTasks.slice(0,3).map(t => `<div class="cal-task ${t.priority === 'high' ? 'high' : ''} ${t.done ? 'done' : ''}">${escapeHtml(t.text)}</div>`).join('')}
@@ -833,8 +860,8 @@
     }
 
     function renderProspectsTable() {
-      const cols = data.prospects._columns;
-      const rows = data.prospects._rows;
+      const cols = data.prospects._columns || [];
+      const rows = data.prospects._rows || [];
       return `
         <div style="display:flex;gap:0.4rem;margin-bottom:0.8rem;flex-wrap:wrap">
           <button class="btn" onclick="document.getElementById('excelImport').click()"><i class="ti ti-file-import"></i> Import Excel</button>
@@ -886,7 +913,7 @@
             ${viewMode === 'kanban' ? renderKanban(data.week, 'week') : viewMode === 'calendar' ? renderCalendar(data.week) : renderTaskList('week', data.week)}`;
 
         case 'clients':
-          const names = Object.keys(data.clients);
+          const names = Object.keys(data.clients||{});
           return `<div class="client-input">
               <input type="text" id="client-name" placeholder="Add new client..." onkeypress="if(event.key==='Enter')addClient('client-name')">
               <button class="btn" onclick="addClient('client-name')"><i class="ti ti-plus"></i> Add</button>
@@ -911,14 +938,17 @@
               <input type="text" id="q-txt" placeholder="Add question..." onkeypress="if(event.key==='Enter'){addTask('questions',document.getElementById('q-txt').value);document.getElementById('q-txt').value=''}">
               <button class="btn btn-primary" onclick="addTask('questions',document.getElementById('q-txt').value);document.getElementById('q-txt').value=''">Add</button>
             </div>
-            ${data.questions.length === 0 ? '<div class="empty">No questions yet</div>' : '<div class="task-list">' + data.questions.map(t => `
+            ${(data.questions||[]).length === 0 ? '<div class="empty">No questions yet</div>' : '<div class="task-list">' + (data.questions||[]).map(t => `
               <div class="task ${t.done ? 'done' : ''}">
                 <div class="checkbox ${t.done ? 'checked' : ''}" onclick="toggleTask('questions','${t.id}')">${t.done ? '<i class="ti ti-check" style="font-size:11px"></i>' : ''}</div>
                 <div class="task-content">
                   <div class="task-text"><span style="color:var(--warning);font-weight:600">?</span> ${escapeHtml(t.text)}</div>
                   <div class="task-meta">${formatDate(t.created)}</div>
                 </div>
-                <div class="task-actions"><button class="task-btn" onclick="deleteTask('questions','${t.id}')"><i class="ti ti-trash"></i></button></div>
+                <div class="task-actions">
+                  <button class="task-btn" onclick="startEdit('questions','${t.id}')" title="Edit"><i class="ti ti-pencil"></i></button>
+                  <button class="task-btn" onclick="deleteTask('questions','${t.id}')"><i class="ti ti-trash"></i></button>
+                </div>
               </div>
             `).join('') + '</div>'}`;
 
@@ -934,20 +964,20 @@
               <div class="review-title"><i class="ti ti-report-analytics" style="color:var(--accent)"></i> This Week</div>
               <div class="review-stat"><span>Completed</span><span style="color:var(--success)">${completedThisWeek}</span></div>
               <div class="review-stat"><span>Pending</span><span>${all.filter(t => !t.done).length}</span></div>
-              <div class="review-stat"><span>Prospects</span><span>${data.prospects._rows.length}</span></div>
+              <div class="review-stat"><span>Prospects</span><span>${(data.prospects._rows||[]).length}</span></div>
             </div>
             ${overdue.length ? `<div class="review-section" style="border-left:3px solid var(--danger)">
               <div class="review-title" style="color:var(--danger)"><i class="ti ti-alert-triangle"></i> Overdue (${overdue.length})</div>
-              ${overdue.slice(0,5).map(t => `<div style="font-size:0.75rem;padding:0.2rem 0">${escapeHtml(t.text)} · due ${formatDate(t.due)}</div>`).join('')}
+              ${overdue.slice(0,5).map(t => `<div style="font-size:0.75rem;padding:0.2rem 0">${escapeHtml(t.text)} · due ${formatDueDate(t.due)}</div>`).join('')}
             </div>` : ''}
             ${dueSoon.length ? `<div class="review-section" style="border-left:3px solid var(--warning)">
               <div class="review-title" style="color:var(--warning)"><i class="ti ti-clock"></i> Due Soon (${dueSoon.length})</div>
-              ${dueSoon.slice(0,5).map(t => `<div style="font-size:0.75rem;padding:0.2rem 0">${escapeHtml(t.text)} · due ${formatDate(t.due)}</div>`).join('')}
+              ${dueSoon.slice(0,5).map(t => `<div style="font-size:0.75rem;padding:0.2rem 0">${escapeHtml(t.text)} · due ${formatDueDate(t.due)}</div>`).join('')}
             </div>` : ''}
             <div class="review-section">
               <div class="review-title"><i class="ti ti-building" style="color:var(--accent)"></i> By Client</div>
-              ${Object.entries(data.clients).length === 0 ? '<div style="font-size:0.75rem;color:var(--text-tertiary)">No clients</div>' :
-                Object.entries(data.clients).map(([n, t]) => `<div class="review-stat"><span>${escapeHtml(n)}</span><span>${t.filter(x => !x.done).length} pending</span></div>`).join('')}
+              ${Object.entries(data.clients||{}).length === 0 ? '<div style="font-size:0.75rem;color:var(--text-tertiary)">No clients</div>' :
+                Object.entries(data.clients||{}).map(([n, t]) => `<div class="review-stat"><span>${escapeHtml(n)}</span><span>${(t||[]).filter(x => !x.done).length} pending</span></div>`).join('')}
             </div>`;
 
         default: return '';
@@ -983,9 +1013,8 @@
       document.getElementById('content').innerHTML = renderContent();
     }
 
-    loadData();
-    if (syncKey) loadFromRemote().then(loaded => { if (loaded) { render(); initDatePickers(); } });
-    document.getElementById('syncModal').addEventListener('click', e => { if (e.target.id === 'syncModal') closeSyncModal(); });
+    // Initialize
+    initFirebase();
   </script>
 </body>
 </html>
