@@ -232,6 +232,9 @@
     .task-meta .due-soon { color: var(--warning); }
     .task-actions { display: flex; opacity: 0; transition: opacity 0.15s; }
     .task:hover .task-actions { opacity: 1; }
+    @media (max-width: 600px) {
+      .task-actions { opacity: 1; }
+    }
     .task-btn {
       border: none;
       background: transparent;
@@ -644,12 +647,107 @@
 
     function addClient(inputId) {
       const input = document.getElementById(inputId);
+      if (!input) { console.log('Input not found:', inputId); return; }
       const name = input.value.trim();
-      if (!name || (data.clients && data.clients[name])) return;
+      if (!name) { alert('Please enter a client name'); return; }
       if (!data.clients) data.clients = {};
+      if (data.clients[name]) { alert('Client already exists'); return; }
       data.clients[name] = [];
       input.value = '';
       saveData();
+      render();
+      initDatePickers();
+    }
+
+    function rescheduleTask(list, id, client = null) {
+      const newDate = prompt('Enter new date (YYYY-MM-DD) or leave blank to move to tomorrow:');
+      let targetDate;
+      if (newDate === null) return; // cancelled
+      if (newDate === '') {
+        // Move to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        targetDate = tomorrow.toISOString().split('T')[0];
+      } else {
+        targetDate = newDate;
+      }
+      
+      let arr = Array.isArray(data[list]) ? data[list] : (client && data[list] ? data[list][client] : null);
+      if (!arr) return;
+      const task = arr.find(t => t.id === id);
+      if (task) {
+        task.due = targetDate;
+        task.rescheduledFrom = task.rescheduledFrom || [];
+        task.rescheduledFrom.push(new Date().toISOString().split('T')[0]);
+      }
+      saveData();
+    }
+
+    function moveToWeek(list, id, client = null) {
+      let arr = Array.isArray(data[list]) ? data[list] : (client && data[list] ? data[list][client] : null);
+      if (!arr) return;
+      const taskIndex = arr.findIndex(t => t.id === id);
+      if (taskIndex === -1) return;
+      const task = arr[taskIndex];
+      arr.splice(taskIndex, 1);
+      if (!data.week) data.week = [];
+      data.week.unshift(task);
+      saveData();
+    }
+
+    // Goal planning functions
+    function addGoalMilestone(goalId) {
+      const text = prompt('Enter milestone/step:');
+      if (!text || !text.trim()) return;
+      const goal = (data.goals || []).find(g => g.id === goalId);
+      if (goal) {
+        if (!goal.milestones) goal.milestones = [];
+        goal.milestones.push({ id: genId(), text: text.trim(), done: false });
+        saveData();
+      }
+    }
+
+    function toggleMilestone(goalId, milestoneId) {
+      const goal = (data.goals || []).find(g => g.id === goalId);
+      if (goal && goal.milestones) {
+        const m = goal.milestones.find(m => m.id === milestoneId);
+        if (m) m.done = !m.done;
+        saveData();
+      }
+    }
+
+    function deleteMilestone(goalId, milestoneId) {
+      const goal = (data.goals || []).find(g => g.id === goalId);
+      if (goal && goal.milestones) {
+        goal.milestones = goal.milestones.filter(m => m.id !== milestoneId);
+        saveData();
+      }
+    }
+
+    function setGoalRecurring(goalId) {
+      const goal = (data.goals || []).find(g => g.id === goalId);
+      if (!goal) return;
+      const options = ['none', 'daily', 'weekly', 'monthly'];
+      const current = goal.recurring || 'none';
+      const next = options[(options.indexOf(current) + 1) % options.length];
+      goal.recurring = next;
+      saveData();
+    }
+
+    function setGoalTargetDate(goalId) {
+      const goal = (data.goals || []).find(g => g.id === goalId);
+      if (!goal) return;
+      const newDate = prompt('Enter target date (YYYY-MM-DD):', goal.targetDate || '');
+      if (newDate === null) return;
+      goal.targetDate = newDate || null;
+      saveData();
+    }
+
+    function expandGoal(goalId) {
+      if (!window.expandedGoals) window.expandedGoals = {};
+      window.expandedGoals[goalId] = !window.expandedGoals[goalId];
+      render();
+      initDatePickers();
     }
 
     function deleteClient(name) {
@@ -804,6 +902,8 @@
           <div class="task-meta">${renderTaskMeta(t)}</div>
         </div>
         <div class="task-actions">
+          ${list === 'today' && !t.done ? `<button class="task-btn" onclick="rescheduleTask('${list}','${t.id}'${clientArg})" title="Reschedule"><i class="ti ti-calendar-plus"></i></button>
+          <button class="task-btn" onclick="moveToWeek('${list}','${t.id}'${clientArg})" title="Move to Week"><i class="ti ti-calendar-week"></i></button>` : ''}
           <button class="task-btn" onclick="startEdit('${list}','${t.id}'${clientArg})" title="Edit"><i class="ti ti-pencil"></i></button>
           <button class="task-btn" onclick="deleteTask('${list}','${t.id}'${clientArg})" title="Delete"><i class="ti ti-trash"></i></button>
         </div>
@@ -900,7 +1000,51 @@
         case 'goals':
           return `<div class="section-header"><i class="ti ti-target"></i> Goals & Objectives</div>
             ${renderInputRow('goals', 'Add a goal...')}
-            ${viewMode === 'kanban' ? renderKanban(data.goals, 'goals') : renderTaskList('goals', data.goals)}`;
+            ${(data.goals||[]).length === 0 ? '<div class="empty">No goals yet</div>' : '<div class="task-list">' + (data.goals||[]).map(g => {
+              const isExpanded = window.expandedGoals && window.expandedGoals[g.id];
+              const milestones = g.milestones || [];
+              const completedMilestones = milestones.filter(m => m.done).length;
+              const recurringLabels = { daily: '🔄 Daily', weekly: '🔄 Weekly', monthly: '🔄 Monthly' };
+              const priorityLabel = { high: 'High', med: 'Med', low: 'Low' }[g.priority] || 'Med';
+              
+              return `<div class="task ${g.done ? 'done' : ''} priority-${g.priority || 'med'}" style="flex-direction:column;align-items:stretch">
+                <div style="display:flex;align-items:flex-start;gap:0.5rem">
+                  <div class="checkbox ${g.done ? 'checked' : ''}" onclick="toggleTask('goals','${g.id}')">${g.done ? '<i class="ti ti-check" style="font-size:11px"></i>' : ''}</div>
+                  <div class="task-content" style="flex:1">
+                    <div class="task-text">
+                      ${escapeHtml(g.text)}
+                      <span class="priority-badge ${g.priority || 'med'}">${priorityLabel}</span>
+                      ${g.recurring && g.recurring !== 'none' ? `<span style="font-size:0.6rem;color:var(--accent);margin-left:0.3rem">${recurringLabels[g.recurring]}</span>` : ''}
+                    </div>
+                    <div class="task-meta">
+                      ${formatDate(g.created)}
+                      ${g.targetDate ? ` · <span style="color:var(--accent)">Target: ${formatDueDate(g.targetDate)}</span>` : ''}
+                      ${milestones.length > 0 ? ` · ${completedMilestones}/${milestones.length} steps` : ''}
+                    </div>
+                  </div>
+                  <div class="task-actions" style="opacity:1">
+                    <button class="task-btn" onclick="expandGoal('${g.id}')" title="${isExpanded ? 'Collapse' : 'Plan'}"><i class="ti ti-${isExpanded ? 'chevron-up' : 'list-details'}"></i></button>
+                    <button class="task-btn" onclick="startEdit('goals','${g.id}')" title="Edit"><i class="ti ti-pencil"></i></button>
+                    <button class="task-btn" onclick="deleteTask('goals','${g.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+                  </div>
+                </div>
+                ${isExpanded ? `
+                  <div style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid var(--border);margin-left:1.5rem">
+                    <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem;flex-wrap:wrap">
+                      <button class="btn" style="font-size:0.65rem;padding:0.3rem 0.5rem" onclick="addGoalMilestone('${g.id}')"><i class="ti ti-plus"></i> Add Step</button>
+                      <button class="btn" style="font-size:0.65rem;padding:0.3rem 0.5rem" onclick="setGoalTargetDate('${g.id}')"><i class="ti ti-calendar"></i> ${g.targetDate ? 'Change' : 'Set'} Target</button>
+                      <button class="btn" style="font-size:0.65rem;padding:0.3rem 0.5rem" onclick="setGoalRecurring('${g.id}')"><i class="ti ti-refresh"></i> ${g.recurring && g.recurring !== 'none' ? recurringLabels[g.recurring] : 'Set Recurring'}</button>
+                    </div>
+                    ${milestones.length === 0 ? '<div style="font-size:0.7rem;color:var(--text-tertiary)">No steps yet - add milestones to plan this goal</div>' : 
+                      milestones.map(m => `<div style="display:flex;align-items:center;gap:0.4rem;padding:0.25rem 0;font-size:0.75rem">
+                        <div class="checkbox ${m.done ? 'checked' : ''}" style="width:14px;height:14px" onclick="toggleMilestone('${g.id}','${m.id}')">${m.done ? '<i class="ti ti-check" style="font-size:9px"></i>' : ''}</div>
+                        <span style="${m.done ? 'text-decoration:line-through;opacity:0.5' : ''}">${escapeHtml(m.text)}</span>
+                        <button class="task-btn" style="font-size:0.7rem;margin-left:auto" onclick="deleteMilestone('${g.id}','${m.id}')"><i class="ti ti-x"></i></button>
+                      </div>`).join('')}
+                  </div>
+                ` : ''}
+              </div>`;
+            }).join('') + '</div>'}`;
 
         case 'today':
           return `<div class="section-header"><i class="ti ti-sun"></i> ${days[today.getDay()]}, ${today.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</div>
