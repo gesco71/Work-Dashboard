@@ -611,9 +611,9 @@
       };
     }
 
-    function addTask(list, text, priority = 'med', dueDate = null, client = null, isMIT = false) {
+    function addTask(list, text, priority = 'med', dueDate = null, client = null) {
       if (!text.trim()) return;
-      const task = { id: genId(), text: text.trim(), done: false, priority, due: dueDate || null, created: new Date().toISOString(), mit: isMIT };
+      const task = { id: genId(), text: text.trim(), done: false, priority, due: dueDate || null, created: new Date().toISOString() };
       if (Array.isArray(data[list])) data[list].unshift(task);
       else if (client && data[list] && data[list][client]) data[list][client].unshift(task);
       saveData();
@@ -978,13 +978,11 @@
     function renderInputRow(list, placeholder, clientName = null) {
       const base = list + (clientName || '').replace(/[^a-zA-Z0-9]/g, '');
       const clientArg = clientName ? `,'${clientName.replace(/'/g, "\\'")}'` : '';
-      const showMIT = (list === 'today' || list === 'week');
       return `<div class="input-row">
-        <input type="text" id="${base}-txt" placeholder="${placeholder}" onkeypress="if(event.key==='Enter'){addTask('${list}',document.getElementById('${base}-txt').value,document.getElementById('${base}-pri').value,document.getElementById('${base}-due').value||null${clientArg},${showMIT ? `document.getElementById('${base}-mit').checked` : 'false'});document.getElementById('${base}-txt').value='';document.getElementById('${base}-due').value='';${showMIT ? `document.getElementById('${base}-mit').checked=false;` : ''}}">
+        <input type="text" id="${base}-txt" placeholder="${placeholder}" onkeypress="if(event.key==='Enter'){addTask('${list}',document.getElementById('${base}-txt').value,document.getElementById('${base}-pri').value,document.getElementById('${base}-due').value||null${clientArg});document.getElementById('${base}-txt').value='';document.getElementById('${base}-due').value=''}">
         <input type="text" class="date-input" id="${base}-due" placeholder="Due date">
         <select id="${base}-pri"><option value="high">High</option><option value="med" selected>Med</option><option value="low">Low</option></select>
-        ${showMIT ? `<label style="display:flex;align-items:center;gap:0.25rem;font-size:0.7rem;color:var(--text-secondary);cursor:pointer;white-space:nowrap"><input type="checkbox" id="${base}-mit" style="cursor:pointer"> MIT</label>` : ''}
-        <button class="btn btn-primary" onclick="addTask('${list}',document.getElementById('${base}-txt').value,document.getElementById('${base}-pri').value,document.getElementById('${base}-due').value||null${clientArg},${showMIT ? `document.getElementById('${base}-mit').checked` : 'false'});document.getElementById('${base}-txt').value='';document.getElementById('${base}-due').value='';${showMIT ? `document.getElementById('${base}-mit').checked=false;` : ''}">Add</button>
+        <button class="btn btn-primary" onclick="addTask('${list}',document.getElementById('${base}-txt').value,document.getElementById('${base}-pri').value,document.getElementById('${base}-due').value||null${clientArg});document.getElementById('${base}-txt').value='';document.getElementById('${base}-due').value=''">Add</button>
       </div>`;
     }
 
