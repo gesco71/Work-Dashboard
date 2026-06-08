@@ -254,6 +254,18 @@
     .priority-badge.high { background: var(--danger-bg); color: var(--danger); }
     .priority-badge.med { background: var(--warning); color: #fff; opacity: 0.85; }
     .priority-badge.low { background: var(--success); color: #fff; opacity: 0.8; }
+    .mit-badge {
+      font-size: 0.6rem;
+      padding: 0.1rem 0.35rem;
+      background: var(--warning);
+      color: #fff;
+      border-radius: 4px;
+      font-weight: 600;
+      margin-right: 0.4rem;
+    }
+    .task.is-mit {
+      background: linear-gradient(90deg, rgba(217, 119, 6, 0.1) 0%, var(--bg-secondary) 100%);
+    }
     .task-edit-input {
       width: 100%;
       padding: 0.4rem;
@@ -488,7 +500,7 @@
     };
 
     let data = JSON.parse(JSON.stringify(defaultData));
-    let activeTab = 'goals';
+    let activeTab = 'mits';
     let viewMode = 'list';
     let editingTask = null;
 
@@ -589,7 +601,9 @@
 
     function getStats() {
       const all = getAllTasks();
+      const mitCount = [...(data.today || []), ...(data.week || [])].filter(t => t.mit && !t.done).length;
       return {
+        mits: mitCount,
         goalsActive: (data.goals||[]).filter(t => !t.done).length,
         overdue: all.filter(t => !t.done && isOverdue(t.due)).length,
         pending: all.filter(t => !t.done).length,
@@ -597,9 +611,9 @@
       };
     }
 
-    function addTask(list, text, priority = 'med', dueDate = null, client = null) {
+    function addTask(list, text, priority = 'med', dueDate = null, client = null, isMIT = false) {
       if (!text.trim()) return;
-      const task = { id: genId(), text: text.trim(), done: false, priority, due: dueDate || null, created: new Date().toISOString() };
+      const task = { id: genId(), text: text.trim(), done: false, priority, due: dueDate || null, created: new Date().toISOString(), mit: isMIT };
       if (Array.isArray(data[list])) data[list].unshift(task);
       else if (client && data[list] && data[list][client]) data[list][client].unshift(task);
       saveData();
@@ -644,6 +658,14 @@
     }
 
     function cancelEdit() { editingTask = null; render(); initDatePickers(); }
+
+    function toggleMIT(list, id, client = null) {
+      let arr = Array.isArray(data[list]) ? data[list] : (client && data[list] ? data[list][client] : null);
+      if (!arr) return;
+      const task = arr.find(t => t.id === id);
+      if (task) task.mit = !task.mit;
+      saveData();
+    }
 
     function addClient(inputId) {
       const input = document.getElementById(inputId);
@@ -877,6 +899,7 @@
       const clientArg = clientName ? `,'${clientName.replace(/'/g, "\\'")}'` : '';
       const isEditing = editingTask && editingTask.id === t.id;
       const priorityLabel = { high: 'High', med: 'Med', low: 'Low' }[t.priority] || 'Med';
+      const showMITToggle = (list === 'today' || list === 'week');
       
       if (isEditing) {
         return `<div class="task priority-${t.priority || 'med'}">
@@ -895,13 +918,17 @@
         </div>`;
       }
       
-      return `<div class="task ${t.done ? 'done' : ''} priority-${t.priority || 'med'} ${overdue ? 'overdue' : ''}">
+      return `<div class="task ${t.done ? 'done' : ''} priority-${t.priority || 'med'} ${overdue ? 'overdue' : ''} ${t.mit ? 'is-mit' : ''}">
         <div class="checkbox ${t.done ? 'checked' : ''}" onclick="toggleTask('${list}','${t.id}'${clientArg})">${t.done ? '<i class="ti ti-check" style="font-size:11px"></i>' : ''}</div>
         <div class="task-content">
-          <div class="task-text">${escapeHtml(t.text)}<span class="priority-badge ${t.priority || 'med'}">${priorityLabel}</span></div>
+          <div class="task-text">
+            ${t.mit ? '<span class="mit-badge">MIT</span>' : ''}
+            ${escapeHtml(t.text)}<span class="priority-badge ${t.priority || 'med'}">${priorityLabel}</span>
+          </div>
           <div class="task-meta">${renderTaskMeta(t)}</div>
         </div>
         <div class="task-actions">
+          ${showMITToggle ? `<button class="task-btn" onclick="toggleMIT('${list}','${t.id}'${clientArg})" title="${t.mit ? 'Remove MIT' : 'Mark as MIT'}"><i class="ti ti-${t.mit ? 'star-filled' : 'star'}" style="${t.mit ? 'color:var(--warning)' : ''}"></i></button>` : ''}
           ${list === 'today' && !t.done ? `<button class="task-btn" onclick="rescheduleTask('${list}','${t.id}'${clientArg})" title="Reschedule"><i class="ti ti-calendar-plus"></i></button>
           <button class="task-btn" onclick="moveToWeek('${list}','${t.id}'${clientArg})" title="Move to Week"><i class="ti ti-calendar-week"></i></button>` : ''}
           <button class="task-btn" onclick="startEdit('${list}','${t.id}'${clientArg})" title="Edit"><i class="ti ti-pencil"></i></button>
@@ -951,11 +978,13 @@
     function renderInputRow(list, placeholder, clientName = null) {
       const base = list + (clientName || '').replace(/[^a-zA-Z0-9]/g, '');
       const clientArg = clientName ? `,'${clientName.replace(/'/g, "\\'")}'` : '';
+      const showMIT = (list === 'today' || list === 'week');
       return `<div class="input-row">
-        <input type="text" id="${base}-txt" placeholder="${placeholder}" onkeypress="if(event.key==='Enter'){addTask('${list}',document.getElementById('${base}-txt').value,document.getElementById('${base}-pri').value,document.getElementById('${base}-due').value||null${clientArg});document.getElementById('${base}-txt').value='';document.getElementById('${base}-due').value=''}">
+        <input type="text" id="${base}-txt" placeholder="${placeholder}" onkeypress="if(event.key==='Enter'){addTask('${list}',document.getElementById('${base}-txt').value,document.getElementById('${base}-pri').value,document.getElementById('${base}-due').value||null${clientArg},${showMIT ? `document.getElementById('${base}-mit').checked` : 'false'});document.getElementById('${base}-txt').value='';document.getElementById('${base}-due').value='';${showMIT ? `document.getElementById('${base}-mit').checked=false;` : ''}}">
         <input type="text" class="date-input" id="${base}-due" placeholder="Due date">
         <select id="${base}-pri"><option value="high">High</option><option value="med" selected>Med</option><option value="low">Low</option></select>
-        <button class="btn btn-primary" onclick="addTask('${list}',document.getElementById('${base}-txt').value,document.getElementById('${base}-pri').value,document.getElementById('${base}-due').value||null${clientArg});document.getElementById('${base}-txt').value='';document.getElementById('${base}-due').value=''">Add</button>
+        ${showMIT ? `<label style="display:flex;align-items:center;gap:0.25rem;font-size:0.7rem;color:var(--text-secondary);cursor:pointer;white-space:nowrap"><input type="checkbox" id="${base}-mit" style="cursor:pointer"> MIT</label>` : ''}
+        <button class="btn btn-primary" onclick="addTask('${list}',document.getElementById('${base}-txt').value,document.getElementById('${base}-pri').value,document.getElementById('${base}-due').value||null${clientArg},${showMIT ? `document.getElementById('${base}-mit').checked` : 'false'});document.getElementById('${base}-txt').value='';document.getElementById('${base}-due').value='';${showMIT ? `document.getElementById('${base}-mit').checked=false;` : ''}">Add</button>
       </div>`;
     }
 
@@ -997,6 +1026,25 @@
       const today = new Date();
 
       switch (activeTab) {
+        case 'mits':
+          const todayMITs = (data.today || []).filter(t => t.mit && !t.done);
+          const weekMITs = (data.week || []).filter(t => t.mit && !t.done);
+          const completedMITs = [...(data.today || []), ...(data.week || [])].filter(t => t.mit && t.done);
+          return `<div class="section-header"><i class="ti ti-star"></i> Most Important Tasks</div>
+            ${todayMITs.length === 0 && weekMITs.length === 0 ? '<div class="empty">No MITs yet. Mark tasks as MIT in Today or Week tabs using the ☆ button.</div>' : ''}
+            ${todayMITs.length > 0 ? `
+              <div style="font-size:0.7rem;color:var(--text-secondary);margin-bottom:0.4rem;font-weight:500"><i class="ti ti-sun" style="font-size:0.75rem"></i> Today</div>
+              <div class="task-list" style="margin-bottom:1rem">${todayMITs.map(t => renderTask(t, 'today')).join('')}</div>
+            ` : ''}
+            ${weekMITs.length > 0 ? `
+              <div style="font-size:0.7rem;color:var(--text-secondary);margin-bottom:0.4rem;font-weight:500"><i class="ti ti-calendar-week" style="font-size:0.75rem"></i> This Week</div>
+              <div class="task-list" style="margin-bottom:1rem">${weekMITs.map(t => renderTask(t, 'week')).join('')}</div>
+            ` : ''}
+            ${completedMITs.length > 0 ? `
+              <div style="font-size:0.7rem;color:var(--text-tertiary);margin-bottom:0.4rem;margin-top:1rem;font-weight:500"><i class="ti ti-check" style="font-size:0.75rem"></i> Completed MITs</div>
+              <div class="task-list">${completedMITs.slice(0, 5).map(t => renderTask(t, (data.today || []).includes(t) ? 'today' : 'week')).join('')}</div>
+            ` : ''}`;
+
         case 'goals':
           return `<div class="section-header"><i class="ti ti-target"></i> Goals & Objectives</div>
             ${renderInputRow('goals', 'Add a goal...')}
@@ -1119,7 +1167,7 @@
               ${dueSoon.slice(0,5).map(t => `<div style="font-size:0.75rem;padding:0.2rem 0">${escapeHtml(t.text)} · due ${formatDueDate(t.due)}</div>`).join('')}
             </div>` : ''}
             <div class="review-section">
-              <div class="review-title"><i class="ti ti-building" style="color:var(--accent)"></i> By Client</div>
+              <div class="review-title"><i class="ti ti-building" style="color:var(--accent)"></i> Clients</div>
               ${Object.entries(data.clients||{}).length === 0 ? '<div style="font-size:0.75rem;color:var(--text-tertiary)">No clients</div>' :
                 Object.entries(data.clients||{}).map(([n, t]) => `<div class="review-stat"><span>${escapeHtml(n)}</span><span>${(t||[]).filter(x => !x.done).length} pending</span></div>`).join('')}
             </div>`;
@@ -1131,13 +1179,14 @@
     function render() {
       const stats = getStats();
       document.getElementById('stats').innerHTML = `<div class="stats">
-        <div class="stat"><div class="stat-num">${stats.goalsActive}</div><div class="stat-label">Active Goals</div></div>
+        <div class="stat"><div class="stat-num">${stats.mits}</div><div class="stat-label">MITs</div></div>
         <div class="stat ${stats.overdue ? 'warning' : ''}"><div class="stat-num">${stats.overdue}</div><div class="stat-label">Overdue</div></div>
         <div class="stat"><div class="stat-num">${stats.pending}</div><div class="stat-label">Pending</div></div>
         <div class="stat"><div class="stat-num">${stats.done}</div><div class="stat-label">Done</div></div>
       </div>`;
 
       const tabs = [
+        { id: 'mits', label: 'MITs', icon: 'star' },
         { id: 'goals', label: 'Goals', icon: 'target' },
         { id: 'today', label: 'Today', icon: 'sun' },
         { id: 'week', label: 'Week', icon: 'calendar-week' },
