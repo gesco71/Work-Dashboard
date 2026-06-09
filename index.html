@@ -22,7 +22,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:1
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 nav{display:flex;overflow-x:auto;background:var(--surface);border-bottom:1px solid var(--border);padding:0 8px;gap:2px;scrollbar-width:none}
 nav::-webkit-scrollbar{display:none}
-.tab{padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--muted);white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;position:relative}
+.tab{padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--muted);white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s}
 .tab:hover{color:var(--text)}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
 .badge{background:var(--danger);color:#fff;font-size:9px;border-radius:10px;padding:1px 5px;margin-left:3px}
@@ -38,6 +38,7 @@ main{max-width:760px;margin:0 auto;padding:16px}
 .input-row button:hover{opacity:.85}
 .mit-label{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);white-space:nowrap;cursor:pointer}
 .mit-label input{cursor:pointer;accent-color:var(--danger)}
+/* tasks */
 .task{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:5px;transition:all .15s}
 .task:hover{border-color:#4a5568}
 .task.done .task-text{text-decoration:line-through;color:var(--muted)}
@@ -49,6 +50,7 @@ main{max-width:760px;margin:0 auto;padding:16px}
 .task-body{flex:1;min-width:0}
 .task-text{font-size:13px;line-height:1.4;word-break:break-word}
 .task-meta{display:flex;gap:5px;margin-top:3px;flex-wrap:wrap;align-items:center}
+/* tags */
 .tag{font-size:10px;padding:1px 6px;border-radius:10px;font-weight:500}
 .tag-pri-high{background:#3d1515;color:#f87171}
 .tag-pri-med{background:#3d2a10;color:#fb923c}
@@ -59,51 +61,78 @@ main{max-width:760px;margin:0 auto;padding:16px}
 .tag-client{background:#2a0d3d;color:#c084fc}
 .tag-mit{background:#3d1515;color:#f87171;font-weight:700}
 .tag-weekly{background:#0d2a1a;color:#4ade80}
-.task-actions{display:flex;gap:4px;opacity:0;transition:opacity .15s;flex-shrink:0}
+.tag-archived{background:#1a1d27;color:#8892b0}
+/* star MIT toggle */
+.mit-star{background:none;border:none;cursor:pointer;padding:2px 3px;font-size:15px;line-height:1;color:#4a5568;transition:color .15s}
+.mit-star.on{color:#f59e0b}
+.mit-star:hover{color:#f59e0b}
+/* task actions */
+.task-actions{display:flex;gap:2px;opacity:0;transition:opacity .15s;flex-shrink:0;align-items:center}
 .task:hover .task-actions{opacity:1}
 @media(max-width:600px){.task-actions{opacity:1}}
 .act-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:2px 4px;border-radius:4px;font-size:14px;line-height:1}
 .act-btn:hover{color:var(--text);background:var(--surface2)}
+/* notes/steps expander */
+.task-notes{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:none}
+.task-notes.open{display:block}
+.note-item{font-size:12px;color:var(--muted);padding:3px 0;display:flex;align-items:flex-start;gap:6px;border-bottom:1px solid var(--border)}
+.note-item:last-child{border-bottom:none}
+.step-check{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;border-bottom:1px solid var(--border)}
+.step-check:last-child{border-bottom:none}
+.onenote-link{font-size:11px;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:3px;margin-top:4px}
+.onenote-link:hover{text-decoration:underline}
+/* misc */
 .empty{text-align:center;padding:28px 16px;color:var(--muted);font-size:13px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:16px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;text-align:center}
 .stat-num{font-size:22px;font-weight:700;color:var(--accent)}
 .stat-num.red{color:var(--danger)}
 .stat-label{font-size:11px;color:var(--muted);margin-top:2px}
+/* modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;width:100%;max-width:400px}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto}
 .modal h3{font-size:15px;font-weight:600;margin-bottom:14px;color:var(--text)}
 .modal label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px;margin-top:10px}
 .modal input,.modal select,.modal textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;outline:none;font-family:inherit;background:var(--surface2);color:var(--text)}
-.modal input:focus,.modal select:focus{border-color:var(--accent)}
+.modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--accent)}
+.modal textarea{min-height:60px;resize:vertical}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
 .btn-cancel{padding:7px 14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:var(--radius);cursor:pointer;font-size:13px}
 .btn-save{padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-size:13px}
+.btn-danger{padding:7px 14px;background:var(--danger);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-size:13px}
+/* client blocks */
 .client-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden}
 .client-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
 .client-name{font-weight:600;font-size:13px}
 .client-count{font-size:11px;color:var(--muted)}
 .client-body{padding:10px 12px;display:none}
+/* review */
 .review-section{margin-bottom:20px}
 .review-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.review-item{display:flex;align-items:flex-start;gap:8px;padding:6px 10px;border-radius:var(--radius);margin-bottom:4px;font-size:13px;background:var(--surface);border:1px solid var(--border)}
+.review-item{display:flex;align-items:flex-start;gap:8px;padding:6px 10px;border-radius:var(--radius);margin-bottom:4px;font-size:13px;background:var(--surface);border:1px solid var(--border);flex-wrap:wrap}
 .review-item.overdue{background:#2d1a1a;border-color:#5c2a2a}
 .review-item.done{background:#0d2a26;border-color:#1a4a42}
 .src-tag{font-size:10px;padding:1px 5px;border-radius:8px;flex-shrink:0}
+/* view/kanban */
 .view-toggle{display:flex;gap:4px;margin-bottom:12px}
 .view-btn{padding:5px 10px;border:1px solid var(--border);background:var(--surface2);border-radius:var(--radius);cursor:pointer;font-size:12px;color:var(--muted)}
 .view-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .kanban{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
 .kanban-col{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px}
 .kanban-col-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+/* goals */
 .goal-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px}
 .goal-title-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
 .goal-title{font-weight:600;font-size:13px;flex:1}
 .progress-bar{height:4px;background:var(--surface2);border-radius:2px;margin:6px 0}
 .progress-fill{height:100%;background:var(--accent);border-radius:2px}
 .step-item{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;border-bottom:1px solid var(--border)}
-.prospect-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px}
+/* prospects / projects */
+.card-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px}
 .sync-note{text-align:center;font-size:11px;color:var(--muted);margin-top:20px;padding-top:12px;border-top:1px solid var(--border)}
+/* archive toggle */
+.archive-toggle{font-size:12px;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-top:8px;margin-bottom:4px;background:none;border:none;padding:0}
+.archive-toggle:hover{color:var(--text)}
 </style>
 </head>
 <body>
@@ -119,6 +148,7 @@ main{max-width:760px;margin:0 auto;padding:16px}
 <nav id="nav"></nav>
 <main id="main"></main>
 
+<!-- Edit Task Modal -->
 <div class="modal-overlay" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <h3>Edit Task</h3>
@@ -134,12 +164,43 @@ main{max-width:760px;margin:0 auto;padding:16px}
     </select>
     <label>Assign to Client</label>
     <select id="edit-client"></select>
+    <label>Notes</label>
+    <textarea id="edit-notes" placeholder="Add notes or context..."></textarea>
+    <label>OneNote Link</label>
+    <input type="text" id="edit-onenote" placeholder="Paste OneNote URL...">
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:12px">
       <input type="checkbox" id="edit-mit" style="width:auto;cursor:pointer;accent-color:var(--danger)"> Mark as MIT (Most Important Task)
     </label>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
       <button class="btn-save" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Project Modal -->
+<div class="modal-overlay" id="proj-modal" style="display:none" onclick="if(event.target===this)closeProjModal()">
+  <div class="modal">
+    <h3 id="proj-modal-title">Add Project</h3>
+    <label>Project Name</label>
+    <input type="text" id="pm-name">
+    <label>Status</label>
+    <select id="pm-status">
+      <option>Active</option><option>On Hold</option><option>In Review</option><option>Complete</option>
+    </select>
+    <label>Priority</label>
+    <select id="pm-pri"><option value="high">High</option><option value="med" selected>Med</option><option value="low">Low</option></select>
+    <label>Due Date</label>
+    <input type="date" id="pm-due">
+    <label>Assign to Client</label>
+    <select id="pm-client"></select>
+    <label>Notes</label>
+    <textarea id="pm-notes" placeholder="Description, context, goals..."></textarea>
+    <label>OneNote Link</label>
+    <input type="text" id="pm-onenote" placeholder="Paste OneNote URL...">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeProjModal()">Cancel</button>
+      <button class="btn-save" onclick="saveProjModal()">Save</button>
     </div>
   </div>
 </div>
@@ -169,11 +230,14 @@ const CLIENT_LIST = [
   "Virginia Green","Weidmeuller","Weinstein","West Creek Financial"
 ];
 
-let data = {today:[],week:[],goals:[],clients:{},prospects:[],questions:[]};
+let data = {today:[],week:[],goals:[],clients:{},prospects:[],questions:[],projects:[],archive:[]};
 let activeTab = 'goals';
 let viewMode = 'list';
 let editCtx = null;
+let projEditIdx = null;
 let openClients = new Set();
+let showArchive = false;
+let openNotes = new Set(); // tracks which task ids have notes expanded
 
 function loadData(){
   dataRef.on('value', snap => {
@@ -185,6 +249,8 @@ function loadData(){
       data.clients   = val.clients   || {};
       data.prospects = val.prospects || [];
       data.questions = val.questions || [];
+      data.projects  = val.projects  || [];
+      data.archive   = val.archive   || [];
     }
     document.getElementById('dot').className='dot live';
     document.getElementById('status-txt').textContent='Live';
@@ -210,7 +276,7 @@ function getStats(){
   const t=todayStr();
   const wa=new Date(); wa.setDate(wa.getDate()-7);
   const was=wa.toISOString().slice(0,10);
-  const mits=[...data.today,...data.week].filter(x=>x.mit&&!x.done).length;
+  const mits=all.filter(x=>x.mit&&!x.done).length;
   return{
     overdue:all.filter(x=>!x.done&&x.due&&x.due<t).length,
     dueToday:all.filter(x=>!x.done&&x.due===t).length,
@@ -223,6 +289,7 @@ function clientSelectOpts(val){
   return '<option value="">— No client —</option>'+CLIENT_LIST.map(c=>`<option value="${c}"${val===c?' selected':''}>${c}</option>`).join('');
 }
 
+// ── TASK HTML (shared renderer for today/week) ─────────────────
 function taskHTML(t, list, idx){
   const dc=t.done?'':dateClass(t.due||'');
   let cls='task';
@@ -231,28 +298,62 @@ function taskHTML(t, list, idx){
   if(!t.done&&dc==='due-soon')cls+=' due-soon';
   if(t.mit&&!t.done)cls+=' mit-task';
   const weeklyTag=(list==='week')?'<span class="tag tag-weekly src-tag">Weekly</span>':'';
-  return`<div class="${cls}">
+  const hasNotes=t.notes||(t.steps&&t.steps.length)||t.onenote;
+  const notesOpen=openNotes.has(t.id);
+  const stepsHTML=(t.steps||[]).map((s,si)=>`
+    <div class="step-check">
+      <input type="checkbox" ${s.done?'checked':''} onchange="toggleStep('${list}',${idx},${si})" style="cursor:pointer;accent-color:var(--accent)">
+      <span style="${s.done?'text-decoration:line-through;color:var(--muted)':''}">${s.text}</span>
+      <button class="act-btn" style="margin-left:auto" onclick="deleteStep('${list}',${idx},${si})"><i class="ti ti-x"></i></button>
+    </div>`).join('');
+
+  return`<div class="${cls}" id="t-${t.id}">
     <input type="checkbox"${t.done?' checked':''} onchange="toggleTask('${list}',${idx})">
     <div class="task-body">
-      <div class="task-text">${t.text}</div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <div class="task-text" style="flex:1">${t.text}</div>
+        <button class="mit-star ${t.mit?'on':''}" onclick="toggleMIT('${list}',${idx})" title="${t.mit?'Remove MIT':'Mark as MIT'}">★</button>
+      </div>
       <div class="task-meta">
         <span class="tag tag-pri-${t.pri||'med'}">${(t.pri||'med').toUpperCase()}</span>
         ${t.due?`<span class="tag tag-due ${dc}">${fmtDate(t.due)}</span>`:''}
         ${t.client?`<span class="tag tag-client"><i class="ti ti-building" style="font-size:9px"></i> ${t.client}</span>`:''}
-        ${t.mit&&!t.done?'<span class="tag tag-mit"><i class="ti ti-star" style="font-size:9px"></i> MIT</span>':''}
+        ${t.mit&&!t.done?'<span class="tag tag-mit">★ MIT</span>':''}
         ${weeklyTag}
       </div>
+      ${hasNotes?`<div class="task-notes ${notesOpen?'open':''}" id="notes-${t.id}">
+        ${t.notes?`<div style="font-size:12px;color:var(--muted);margin-bottom:6px;white-space:pre-wrap">${t.notes}</div>`:''}
+        ${t.onenote?`<a href="${t.onenote}" target="_blank" class="onenote-link"><i class="ti ti-notebook" style="font-size:11px"></i> Open in OneNote</a>`:''}
+        ${stepsHTML}
+        <div style="display:flex;gap:5px;margin-top:6px">
+          <input type="text" id="newstep-${t.id}" placeholder="Add step..." style="flex:1;padding:4px 7px;border:1px solid var(--border);border-radius:5px;font-size:12px;background:var(--surface2);color:var(--text);outline:none"
+            onkeypress="if(event.key==='Enter')addStep('${list}',${idx})">
+          <button onclick="addStep('${list}',${idx})" style="padding:4px 8px;background:var(--accent);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:12px">+</button>
+        </div>
+      </div>`:''}
     </div>
     <div class="task-actions">
+      ${hasNotes?`<button class="act-btn" onclick="toggleNotes('${t.id}')" title="Notes/Steps"><i class="ti ti-notes"></i></button>`:''}
       <button class="act-btn" onclick="openEdit('${list}',${idx})" title="Edit"><i class="ti ti-pencil"></i></button>
+      <button class="act-btn" onclick="archiveTask('${list}',${idx})" title="Archive"><i class="ti ti-archive"></i></button>
       <button class="act-btn" onclick="deleteTask('${list}',${idx})" title="Delete"><i class="ti ti-trash"></i></button>
     </div>
   </div>`;
 }
 
 function renderTaskList(list, tasks){
-  if(!tasks||!tasks.length)return'<div class="empty">No tasks yet — add one above</div>';
-  return tasks.map((t,i)=>taskHTML(t,list,i)).join('');
+  const active=tasks.filter(t=>!t.done);
+  const done=tasks.filter(t=>t.done);
+  if(!tasks.length)return'<div class="empty">No tasks yet — add one above</div>';
+  return active.map((t,i)=>taskHTML(t,list,tasks.indexOf(t))).join('')+
+    (done.length?`<button class="archive-toggle" onclick="toggleShowDone('${list}')"><i class="ti ti-chevron-down"></i> ${done.length} completed</button>
+    <div id="done-${list}" style="display:none">${done.map(t=>taskHTML(t,list,tasks.indexOf(t))).join('')}</div>`:'');
+}
+
+function toggleShowDone(list){
+  const el=document.getElementById('done-'+list);
+  if(!el)return;
+  el.style.display=el.style.display==='none'?'block':'none';
 }
 
 function renderKanban(list, tasks){
@@ -269,13 +370,12 @@ function renderKanban(list, tasks){
 }
 
 function inputRowHTML(list, placeholder){
-  const showMit=(list==='today'||list==='week');
   return`<div class="input-row">
     <input type="text" id="${list}-txt" placeholder="${placeholder}" onkeypress="if(event.key==='Enter')quickAdd('${list}')">
     <input type="date" id="${list}-due">
     <select id="${list}-pri"><option value="high">High</option><option value="med" selected>Med</option><option value="low">Low</option></select>
     <select id="${list}-client" style="max-width:160px">${clientSelectOpts('')}</select>
-    ${showMit?`<label class="mit-label"><input type="checkbox" id="${list}-mit"> MIT</label>`:''}
+    <label class="mit-label"><input type="checkbox" id="${list}-mit"> MIT</label>
     <button onclick="quickAdd('${list}')"><i class="ti ti-plus"></i> Add</button>
   </div>`;
 }
@@ -289,7 +389,7 @@ function quickAdd(list){
   const client=clientEl?clientEl.value||null:null;
   const mitEl=document.getElementById(list+'-mit');
   const mit=mitEl?mitEl.checked:false;
-  const task={id:uid(),text:txt,pri,due,done:false,client,mit};
+  const task={id:uid(),text:txt,pri,due,done:false,client,mit,notes:'',onenote:'',steps:[]};
   data[list].push(task);
   if(client){
     if(!data.clients[client])data.clients[client]={tasks:[]};
@@ -302,11 +402,56 @@ function quickAdd(list){
   if(clientEl)clientEl.value='';
 }
 
+// ── MIT STAR TOGGLE ────────────────────────────────────────────
+function toggleMIT(list,idx){
+  data[list][idx].mit=!data[list][idx].mit;
+  syncClientTask(list,idx);
+  save();
+}
+
+// ── NOTES TOGGLE ──────────────────────────────────────────────
+function toggleNotes(taskId){
+  if(openNotes.has(taskId))openNotes.delete(taskId);
+  else openNotes.add(taskId);
+  const el=document.getElementById('notes-'+taskId);
+  if(el)el.classList.toggle('open');
+}
+
+// ── STEPS (inline on task) ────────────────────────────────────
+function addStep(list,idx){
+  const t=data[list][idx];
+  const el=document.getElementById('newstep-'+t.id);
+  if(!el)return;
+  const txt=el.value.trim();
+  if(!txt)return;
+  if(!t.steps)t.steps=[];
+  t.steps.push({text:txt,done:false});
+  openNotes.add(t.id);
+  save();
+  el.value='';
+}
+function toggleStep(list,idx,si){
+  if(!data[list][idx].steps)return;
+  data[list][idx].steps[si].done=!data[list][idx].steps[si].done;
+  save();
+}
+function deleteStep(list,idx,si){
+  data[list][idx].steps.splice(si,1);
+  save();
+}
+
 function toggleTask(list,idx){
   if(!data[list][idx])return;
   data[list][idx].done=!data[list][idx].done;
   data[list][idx].doneAt=data[list][idx].done?todayStr():null;
   syncClientTask(list,idx);
+  save();
+}
+function archiveTask(list,idx){
+  const t=data[list].splice(idx,1)[0];
+  t.archivedAt=todayStr();
+  t.archivedFrom=list;
+  data.archive.push(t);
   save();
 }
 function deleteTask(list,idx){if(!confirm('Delete this task?'))return;data[list].splice(idx,1);save();}
@@ -319,6 +464,7 @@ function syncClientTask(list,idx){
   }
 }
 
+// ── EDIT MODAL ────────────────────────────────────────────────
 function openEdit(list,idx){
   const t=data[list][idx];
   editCtx={list,idx};
@@ -326,6 +472,8 @@ function openEdit(list,idx){
   document.getElementById('edit-due').value=t.due||'';
   document.getElementById('edit-pri').value=t.pri||'med';
   document.getElementById('edit-mit').checked=t.mit||false;
+  document.getElementById('edit-notes').value=t.notes||'';
+  document.getElementById('edit-onenote').value=t.onenote||'';
   document.getElementById('edit-client').innerHTML=clientSelectOpts(t.client||'');
   document.getElementById('modal').style.display='flex';
 }
@@ -340,6 +488,8 @@ function saveEdit(){
   t.due=document.getElementById('edit-due').value||null;
   t.pri=document.getElementById('edit-pri').value;
   t.mit=document.getElementById('edit-mit').checked;
+  t.notes=document.getElementById('edit-notes').value||'';
+  t.onenote=document.getElementById('edit-onenote').value.trim()||'';
   t.client=newClient;
   if(oldClient&&oldClient!==newClient&&data.clients[oldClient]){
     data.clients[oldClient].tasks=data.clients[oldClient].tasks.filter(x=>x.id!==t.id);
@@ -350,9 +500,11 @@ function saveEdit(){
     if(ci>=0)data.clients[newClient].tasks[ci]={...t,sourceList:list};
     else data.clients[newClient].tasks.push({...t,sourceList:list});
   }
+  if(t.notes||t.onenote)openNotes.add(t.id);
   save();closeModal();
 }
 
+// ── TABS ──────────────────────────────────────────────────────
 function renderTabs(){
   const s=getStats();
   const tabs=[
@@ -362,14 +514,15 @@ function renderTabs(){
     {id:'today',label:'Today',icon:'ti-sun'},
     {id:'week',label:'Week',icon:'ti-calendar-week'},
     {id:'clients',label:'Clients',icon:'ti-building'},
+    {id:'projects',label:'Projects',icon:'ti-folder'},
     {id:'prospects',label:'Prospects',icon:'ti-user-search'},
-    {id:'questions',label:'Questions',icon:'ti-help'}
+    {id:'questions',label:'Questions',icon:'ti-help'},
+    {id:'archive',label:'Archive',icon:'ti-archive'}
   ];
   document.getElementById('nav').innerHTML=tabs.map(t=>
     `<button class="tab${activeTab===t.id?' active':''}" onclick="switchTab('${t.id}')">
       <i class="ti ${t.icon}"></i> ${t.label}${t.badge?`<span class="badge">${t.badge}</span>`:''}
-    </button>`
-  ).join('');
+    </button>`).join('');
 }
 function switchTab(id){activeTab=id;render();}
 function setView(v){viewMode=v;render();}
@@ -379,12 +532,14 @@ function render(){
   const m=document.getElementById('main');
   const tabs={
     today:renderToday,week:renderWeek,mits:renderMITs,goals:renderGoals,
-    clients:renderClients,prospects:renderProspects,questions:renderQuestions,review:renderReview
+    clients:renderClients,projects:renderProjects,prospects:renderProspects,
+    questions:renderQuestions,review:renderReview,archive:renderArchive
   };
-  m.innerHTML=(tabs[activeTab]||renderToday)()+
+  m.innerHTML=(tabs[activeTab]||renderGoals)()+
     '<div class="sync-note"><i class="ti ti-cloud-check" style="font-size:11px;margin-right:3px"></i>Auto-saves · Access from any device</div>';
 }
 
+// ── TAB RENDERERS ─────────────────────────────────────────────
 function renderToday(){
   return`<div class="section-title">Today's Tasks</div>
     ${inputRowHTML('today',"Add a task for today...")}
@@ -412,9 +567,10 @@ function renderMITs(){
   const active=all.filter(x=>!x.t.done);
   const done=all.filter(x=>x.t.done);
   return`<div class="section-title">Most Important Tasks</div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Tasks marked MIT from Daily &amp; Weekly. Check the MIT box when adding or editing.</p>
-    ${active.length?active.map(({t,list,idx})=>taskHTML(t,list,idx)).join(''):'<div class="empty">No active MITs — check the MIT box when adding or editing a task</div>'}
-    ${done.length?`<div class="section-title" style="margin-top:16px">Completed MITs</div>${done.map(({t,list,idx})=>taskHTML(t,list,idx)).join('')}`:''}`;
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Click the ★ on any task to toggle MIT status. Star on = MIT. Star off = regular task, still tracked.</p>
+    ${active.length?active.map(({t,list,idx})=>taskHTML(t,list,idx)).join(''):'<div class="empty">No active MITs — click the ★ on any task to mark it</div>'}
+    ${done.length?`<button class="archive-toggle" onclick="toggleShowDone('mits-done')"><i class="ti ti-chevron-down"></i> ${done.length} completed MITs</button>
+    <div id="done-mits-done" style="display:none">${done.map(({t,list,idx})=>taskHTML(t,list,idx)).join('')}</div>`:''}`;
 }
 
 function renderGoals(){
@@ -440,23 +596,24 @@ function renderGoals(){
       ${steps.length?`<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:6px">${done}/${steps.length} steps · ${pct}%</div>`:''}
       ${steps.map((s,si)=>`<div class="step-item">
-        <input type="checkbox"${s.done?' checked':''} onchange="toggleStep(${i},${si})" style="cursor:pointer;accent-color:var(--accent)">
+        <input type="checkbox"${s.done?' checked':''} onchange="toggleGoalStep(${i},${si})" style="cursor:pointer;accent-color:var(--accent)">
         <span style="${s.done?'text-decoration:line-through;color:var(--muted)':''}">${s.text}</span>
-        <button class="act-btn" style="margin-left:auto" onclick="deleteStep(${i},${si})"><i class="ti ti-x"></i></button>
+        <button class="act-btn" style="margin-left:auto" onclick="deleteGoalStep(${i},${si})"><i class="ti ti-x"></i></button>
       </div>`).join('')}
       <div style="display:flex;gap:6px;margin-top:8px">
-        <input type="text" id="step-${i}" placeholder="Add step..." style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;background:var(--surface2);color:var(--text)" onkeypress="if(event.key==='Enter')addStep(${i})">
-        <button onclick="addStep(${i})" style="padding:5px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">Add Step</button>
+        <input type="text" id="gstep-${i}" placeholder="Add step..." style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;background:var(--surface2);color:var(--text)" onkeypress="if(event.key==='Enter')addGoalStep(${i})">
+        <button onclick="addGoalStep(${i})" style="padding:5px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">Add Step</button>
       </div>
     </div>`;
   }).join('');
   return`<div class="section-title">Goals</div>${addRow}${list||'<div class="empty">No goals yet</div>'}`;
 }
 function addGoal(){const txt=document.getElementById('goal-txt').value.trim();if(!txt)return;data.goals.push({id:uid(),text:txt,pri:document.getElementById('goal-pri').value,due:document.getElementById('goal-due').value||null,done:false,steps:[]});save();document.getElementById('goal-txt').value='';}
-function addStep(gi){const el=document.getElementById('step-'+gi);const txt=el.value.trim();if(!txt)return;if(!data.goals[gi].steps)data.goals[gi].steps=[];data.goals[gi].steps.push({text:txt,done:false});save();el.value='';}
-function toggleStep(gi,si){data.goals[gi].steps[si].done=!data.goals[gi].steps[si].done;save();}
-function deleteStep(gi,si){data.goals[gi].steps.splice(si,1);save();}
+function addGoalStep(gi){const el=document.getElementById('gstep-'+gi);const txt=el.value.trim();if(!txt)return;if(!data.goals[gi].steps)data.goals[gi].steps=[];data.goals[gi].steps.push({text:txt,done:false});save();el.value='';}
+function toggleGoalStep(gi,si){data.goals[gi].steps[si].done=!data.goals[gi].steps[si].done;save();}
+function deleteGoalStep(gi,si){data.goals[gi].steps.splice(si,1);save();}
 
+// ── CLIENTS ───────────────────────────────────────────────────
 function renderClients(){
   const filter=(document.getElementById('client-search')||{}).value||'';
   const filtered=filter?CLIENT_LIST.filter(n=>n.toLowerCase().includes(filter.toLowerCase())):CLIENT_LIST;
@@ -470,14 +627,19 @@ function renderClients(){
       <button onclick="openClients=new Set(CLIENT_LIST.map(n=>n.replace(/[^a-zA-Z0-9]/g,'_')));renderClientsInPlace()" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:12px;color:var(--muted)" title="Expand all"><i class="ti ti-chevrons-down"></i></button>
       <button onclick="openClients=new Set();renderClientsInPlace()" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:12px;color:var(--muted)" title="Collapse all"><i class="ti ti-chevrons-up"></i></button>
     </div>
-    <div id="clients-list">`;
-  filtered.forEach(name=>{
+    <div id="clients-list">${buildClientListHTML(filtered)}</div>`;
+  return html;
+}
+
+function buildClientListHTML(list){
+  return list.map(name=>{
     const stored=data.clients[name]||{tasks:[]};
     const tasks=stored.tasks||[];
     const active=tasks.filter(t=>!t.done).length;
     const sid=name.replace(/[^a-zA-Z0-9]/g,'_');
     const isOpen=openClients.has(sid);
-    html+=`<div class="client-block">
+    const taskRows=tasks.length?tasks.map((t,ti)=>clientTaskHTML(t,name,ti)).join(''):'<div class="empty">No tasks yet</div>';
+    return`<div class="client-block">
       <div class="client-header" onclick="toggleClient('${sid}')">
         <div>
           <div class="client-name"><i class="ti ti-building" style="color:var(--accent);margin-right:5px"></i>${name}</div>
@@ -492,46 +654,17 @@ function renderClients(){
           <select id="ctp-${sid}"><option value="high">High</option><option value="med" selected>Med</option><option value="low">Low</option></select>
           <button onclick="addClientTask('${name}','${sid}')"><i class="ti ti-plus"></i> Add</button>
         </div>
-        ${tasks.length?tasks.map((t,ti)=>clientTaskHTML(t,name,ti)).join(''):'<div class="empty">No tasks yet</div>'}
+        ${taskRows}
       </div>
     </div>`;
-  });
-  html+=`</div>`;
-  if(!filtered.length) html+=`<div class="empty">No clients match "${filter}"</div>`;
-  return html;
+  }).join('')||'<div class="empty">No clients match</div>';
 }
 
 function renderClientsInPlace(){
   const filter=document.getElementById('client-search').value||'';
   const filtered=filter?CLIENT_LIST.filter(n=>n.toLowerCase().includes(filter.toLowerCase())):CLIENT_LIST;
-  let html='';
-  filtered.forEach(name=>{
-    const stored=data.clients[name]||{tasks:[]};
-    const tasks=stored.tasks||[];
-    const active=tasks.filter(t=>!t.done).length;
-    const sid=name.replace(/[^a-zA-Z0-9]/g,'_');
-    const isOpen=openClients.has(sid);
-    html+=`<div class="client-block">
-      <div class="client-header" onclick="toggleClient('${sid}')">
-        <div>
-          <div class="client-name"><i class="ti ti-building" style="color:var(--accent);margin-right:5px"></i>${name}</div>
-          <div class="client-count">${active} active · ${tasks.length} total</div>
-        </div>
-        <i class="ti ti-chevron-down" id="chev-${sid}" style="transition:transform .2s;color:var(--muted);${isOpen?'transform:rotate(180deg)':''}"></i>
-      </div>
-      <div class="client-body" id="cbody-${sid}" style="display:${isOpen?'block':'none'}">
-        <div class="input-row">
-          <input type="text" id="ct-${sid}" placeholder="Add task for ${name}..." onkeypress="if(event.key==='Enter')addClientTask('${name}','${sid}')" style="flex:1;background:var(--surface2);color:var(--text)">
-          <input type="date" id="ctd-${sid}">
-          <select id="ctp-${sid}"><option value="high">High</option><option value="med" selected>Med</option><option value="low">Low</option></select>
-          <button onclick="addClientTask('${name}','${sid}')"><i class="ti ti-plus"></i> Add</button>
-        </div>
-        ${tasks.length?tasks.map((t,ti)=>clientTaskHTML(t,name,ti)).join(''):'<div class="empty">No tasks yet</div>'}
-      </div>
-    </div>`;
-  });
   const el=document.getElementById('clients-list');
-  if(el) el.innerHTML=html||`<div class="empty">No clients match "${filter}"</div>`;
+  if(el)el.innerHTML=buildClientListHTML(filtered);
 }
 
 function clientTaskHTML(t,clientName,idx){
@@ -540,6 +673,7 @@ function clientTaskHTML(t,clientName,idx){
   if(t.done)cls+=' done';
   if(!t.done&&dc==='overdue')cls+=' overdue';
   const srcTag=t.sourceList?`<span class="tag src-tag" style="background:#0d1f3d;color:#60a5fa">${t.sourceList==='today'?'Daily':'Weekly'}</span>`:'';
+  const mitTag=t.mit&&!t.done?'<span class="tag tag-mit">★ MIT</span>':'';
   return`<div class="${cls}">
     <input type="checkbox"${t.done?' checked':''} onchange="toggleClientTask('${clientName}',${idx})">
     <div class="task-body">
@@ -547,8 +681,10 @@ function clientTaskHTML(t,clientName,idx){
       <div class="task-meta">
         <span class="tag tag-pri-${t.pri||'med'}">${(t.pri||'med').toUpperCase()}</span>
         ${t.due?`<span class="tag tag-due ${dc}">${fmtDate(t.due)}</span>`:''}
-        ${srcTag}
+        ${srcTag}${mitTag}
       </div>
+      ${t.notes?`<div style="font-size:12px;color:var(--muted);margin-top:5px;white-space:pre-wrap">${t.notes}</div>`:''}
+      ${t.onenote?`<a href="${t.onenote}" target="_blank" class="onenote-link"><i class="ti ti-notebook" style="font-size:11px"></i> Open in OneNote</a>`:''}
     </div>
     <div class="task-actions">
       <button class="act-btn" onclick="deleteClientTask('${clientName}',${idx})"><i class="ti ti-trash"></i></button>
@@ -562,7 +698,7 @@ function toggleClient(sid){
   const open=b.style.display==='block';
   b.style.display=open?'none':'block';
   c.style.transform=open?'':'rotate(180deg)';
-  if(open) openClients.delete(sid); else openClients.add(sid);
+  if(open)openClients.delete(sid);else openClients.add(sid);
 }
 function addClientTask(clientName,sid){
   const txt=document.getElementById('ct-'+sid).value.trim();
@@ -586,6 +722,100 @@ function toggleClientTask(clientName,idx){
 }
 function deleteClientTask(clientName,idx){if(!confirm('Delete?'))return;data.clients[clientName].tasks.splice(idx,1);save();}
 
+// ── PROJECTS ──────────────────────────────────────────────────
+function renderProjects(){
+  const statusColors={Active:'background:#0d1f3d;color:#60a5fa','On Hold':'background:#3d2a10;color:#fb923c','In Review':'background:#2a0d3d;color:#c084fc',Complete:'background:#0d2a1a;color:#4ade80'};
+  const list=(data.projects||[]).map((p,i)=>{
+    const sc=statusColors[p.status]||statusColors['Active'];
+    const steps=p.steps||[];
+    const done=steps.filter(s=>s.done).length;
+    const pct=steps.length?Math.round(done/steps.length*100):0;
+    return`<div class="card-block">
+      <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <div style="font-weight:600;font-size:14px">${p.name}</div>
+            <span style="font-size:11px;padding:2px 8px;border-radius:10px;${sc}">${p.status||'Active'}</span>
+            <span class="tag tag-pri-${p.pri||'med'}">${(p.pri||'med').toUpperCase()}</span>
+            ${p.due?`<span class="tag tag-due ${dateClass(p.due)}">${fmtDate(p.due)}</span>`:''}
+            ${p.client?`<span class="tag tag-client"><i class="ti ti-building" style="font-size:9px"></i> ${p.client}</span>`:''}
+          </div>
+          ${p.notes?`<div style="font-size:12px;color:var(--muted);margin-bottom:6px;white-space:pre-wrap">${p.notes}</div>`:''}
+          ${p.onenote?`<a href="${p.onenote}" target="_blank" class="onenote-link" style="margin-bottom:6px;display:inline-flex"><i class="ti ti-notebook" style="font-size:11px"></i> Open in OneNote</a>`:''}
+          ${steps.length?`<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${done}/${steps.length} steps · ${pct}%</div>`:''}
+          ${steps.map((s,si)=>`<div class="step-item">
+            <input type="checkbox"${s.done?' checked':''} onchange="toggleProjStep(${i},${si})" style="cursor:pointer;accent-color:var(--accent)">
+            <span style="${s.done?'text-decoration:line-through;color:var(--muted)':''};">${s.text}</span>
+            <button class="act-btn" style="margin-left:auto" onclick="deleteProjStep(${i},${si})"><i class="ti ti-x"></i></button>
+          </div>`).join('')}
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <input type="text" id="pstep-${i}" placeholder="Add step..." style="flex:1;padding:4px 7px;border:1px solid var(--border);border-radius:5px;font-size:12px;background:var(--surface2);color:var(--text);outline:none" onkeypress="if(event.key==='Enter')addProjStep(${i})">
+            <button onclick="addProjStep(${i})" style="padding:4px 8px;background:var(--accent);color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:12px">+ Step</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="act-btn" onclick="openProjModal(${i})" title="Edit"><i class="ti ti-pencil"></i></button>
+          <button class="act-btn" onclick="deleteProject(${i})" title="Delete"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  return`<div class="section-title">Projects</div>
+    <div style="margin-bottom:12px">
+      <button onclick="openProjModal(null)" style="padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-size:13px"><i class="ti ti-plus"></i> New Project</button>
+    </div>
+    ${list||'<div class="empty">No projects yet — click New Project to add one</div>'}`;
+}
+
+function openProjModal(idx){
+  projEditIdx=idx;
+  document.getElementById('proj-modal-title').textContent=idx===null?'Add Project':'Edit Project';
+  document.getElementById('pm-client').innerHTML=clientSelectOpts('');
+  if(idx!==null){
+    const p=data.projects[idx];
+    document.getElementById('pm-name').value=p.name||'';
+    document.getElementById('pm-status').value=p.status||'Active';
+    document.getElementById('pm-pri').value=p.pri||'med';
+    document.getElementById('pm-due').value=p.due||'';
+    document.getElementById('pm-notes').value=p.notes||'';
+    document.getElementById('pm-onenote').value=p.onenote||'';
+    document.getElementById('pm-client').innerHTML=clientSelectOpts(p.client||'');
+  } else {
+    document.getElementById('pm-name').value='';
+    document.getElementById('pm-status').value='Active';
+    document.getElementById('pm-pri').value='med';
+    document.getElementById('pm-due').value='';
+    document.getElementById('pm-notes').value='';
+    document.getElementById('pm-onenote').value='';
+  }
+  document.getElementById('proj-modal').style.display='flex';
+}
+function closeProjModal(){document.getElementById('proj-modal').style.display='none';projEditIdx=null;}
+function saveProjModal(){
+  const name=document.getElementById('pm-name').value.trim();
+  if(!name)return;
+  const obj={
+    id:projEditIdx!==null?(data.projects[projEditIdx].id||uid()):uid(),
+    name,
+    status:document.getElementById('pm-status').value,
+    pri:document.getElementById('pm-pri').value,
+    due:document.getElementById('pm-due').value||null,
+    notes:document.getElementById('pm-notes').value||'',
+    onenote:document.getElementById('pm-onenote').value.trim()||'',
+    client:document.getElementById('pm-client').value||null,
+    steps:projEditIdx!==null?(data.projects[projEditIdx].steps||[]):[]
+  };
+  if(projEditIdx!==null)data.projects[projEditIdx]=obj;
+  else data.projects.push(obj);
+  save();closeProjModal();
+}
+function deleteProject(i){if(!confirm('Delete project?'))return;data.projects.splice(i,1);save();}
+function addProjStep(i){const el=document.getElementById('pstep-'+i);const txt=el.value.trim();if(!txt)return;if(!data.projects[i].steps)data.projects[i].steps=[];data.projects[i].steps.push({text:txt,done:false});save();el.value='';}
+function toggleProjStep(i,si){data.projects[i].steps[si].done=!data.projects[i].steps[si].done;save();}
+function deleteProjStep(i,si){data.projects[i].steps.splice(si,1);save();}
+
+// ── PROSPECTS ─────────────────────────────────────────────────
 function renderProspects(){
   const addRow=`<div class="input-row">
     <input type="text" id="pro-name" placeholder="Prospect name...">
@@ -594,7 +824,7 @@ function renderProspects(){
     <select id="pro-status"><option>Active</option><option>Warm</option><option>Hot</option><option>Closed</option></select>
     <button onclick="addProspect()"><i class="ti ti-plus"></i> Add</button>
   </div>`;
-  const list=data.prospects.map((p,i)=>`<div class="prospect-block">
+  const list=(data.prospects||[]).map((p,i)=>`<div class="card-block">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
       <div>
         <div style="font-weight:600;font-size:13px">${p.name}${p.company?` — <span style="font-weight:400">${p.company}</span>`:''}</div>
@@ -616,12 +846,13 @@ function addProspect(){const name=document.getElementById('pro-name').value.trim
 function deleteProspect(i){if(!confirm('Delete prospect?'))return;data.prospects.splice(i,1);save();}
 function addProspectNote(i){const el=document.getElementById('pnote-'+i);const txt=el.value.trim();if(!txt)return;if(!data.prospects[i].notes)data.prospects[i].notes=[];data.prospects[i].notes.push(txt);save();el.value='';}
 
+// ── QUESTIONS ─────────────────────────────────────────────────
 function renderQuestions(){
   const addRow=`<div class="input-row">
     <input type="text" id="q-txt" placeholder="Add a question or item to investigate..." onkeypress="if(event.key==='Enter')addQuestion()">
     <button onclick="addQuestion()"><i class="ti ti-plus"></i> Add</button>
   </div>`;
-  const list=data.questions.map((q,i)=>`<div class="task${q.done?' done':''}">
+  const list=(data.questions||[]).map((q,i)=>`<div class="task${q.done?' done':''}">
     <input type="checkbox"${q.done?' checked':''} onchange="toggleQ(${i})" style="cursor:pointer;accent-color:var(--accent)">
     <div class="task-body"><div class="task-text">${q.text}</div></div>
     <div class="task-actions"><button class="act-btn" onclick="deleteQ(${i})"><i class="ti ti-trash"></i></button></div>
@@ -632,6 +863,7 @@ function addQuestion(){const txt=document.getElementById('q-txt').value.trim();i
 function toggleQ(i){data.questions[i].done=!data.questions[i].done;save();}
 function deleteQ(i){data.questions.splice(i,1);save();}
 
+// ── REVIEW ────────────────────────────────────────────────────
 function renderReview(){
   const t=todayStr();
   const wa=new Date();wa.setDate(wa.getDate()-7);
@@ -657,9 +889,11 @@ function renderReview(){
 
   function ri(x){
     const srcColor=x.sourceList==='Weekly'?'background:#0d2a1a;color:#4ade80':'background:#0d1f3d;color:#60a5fa';
+    const mitBadge=x.mit&&!x.done?'<span class="tag tag-mit" style="font-size:10px">★ MIT</span>':'';
     return`<div class="review-item${x.done?' done':!x.done&&x.due&&x.due<t?' overdue':''}">
       <span class="src-tag" style="${srcColor}">${x.sourceList}</span>
       <span style="flex:1">${x.text}</span>
+      ${mitBadge}
       ${x.due?`<span style="font-size:11px;color:var(--muted)">${fmtDate(x.due)}</span>`:''}
       ${x.client?`<span class="tag tag-client" style="font-size:10px">${x.client}</span>`:''}
     </div>`;
@@ -671,7 +905,10 @@ function renderReview(){
     if(!tasks.length)return'';
     return`<div style="margin-bottom:12px">
       <div style="font-weight:500;font-size:13px;margin-bottom:5px"><i class="ti ti-building" style="color:var(--accent)"></i> ${name} <span style="font-weight:400;color:var(--muted);font-size:12px">${tasks.length} active</span></div>
-      ${tasks.map(t=>`<div class="review-item">${t.text}${t.due?` <span style="font-size:11px;color:var(--muted);margin-left:6px">${fmtDate(t.due)}</span>`:''}</div>`).join('')}
+      ${tasks.map(task=>{
+        const mitBadge=task.mit?'<span class="tag tag-mit" style="font-size:10px">★ MIT</span> ':'';
+        return`<div class="review-item">${mitBadge}${task.text}${task.due?` <span style="font-size:11px;color:var(--muted);margin-left:6px">${fmtDate(task.due)}</span>`:''}</div>`;
+      }).join('')}
     </div>`;
   }).join('');
 
@@ -683,6 +920,53 @@ function renderReview(){
     <div class="review-section"><div class="review-title"><i class="ti ti-building" style="color:var(--accent2)"></i> Clients</div>${clientBreakdown||'<div class="empty">No active client tasks</div>'}</div>`;
 }
 
+// ── ARCHIVE ───────────────────────────────────────────────────
+function renderArchive(){
+  const arc=data.archive||[];
+  const byDate={};
+  arc.forEach(t=>{
+    const d=t.archivedAt||'Unknown';
+    if(!byDate[d])byDate[d]=[];
+    byDate[d].push(t);
+  });
+  const sorted=Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
+  let html=`<div class="section-title">Archive (${arc.length})</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Tasks archived from Daily &amp; Weekly. Use the archive button (box icon) on any task to move it here.</p>`;
+  if(!arc.length) return html+'<div class="empty">No archived tasks yet</div>';
+  sorted.forEach(d=>{
+    html+=`<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;margin:12px 0 5px;letter-spacing:.5px">${fmtDate(d)}</div>`;
+    byDate[d].forEach((t,i)=>{
+      const ai=arc.indexOf(t);
+      html+=`<div class="task done" style="opacity:.75">
+        <i class="ti ti-archive" style="color:var(--muted);margin-top:2px;flex-shrink:0"></i>
+        <div class="task-body">
+          <div class="task-text">${t.text}</div>
+          <div class="task-meta">
+            <span class="tag" style="background:#1a1d27;color:#8892b0">${t.archivedFrom||'task'}</span>
+            ${t.client?`<span class="tag tag-client">${t.client}</span>`:''}
+            ${t.mit?'<span class="tag tag-mit">★ MIT</span>':''}
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="act-btn" onclick="restoreArchive(${ai})" title="Restore"><i class="ti ti-arrow-back-up"></i></button>
+          <button class="act-btn" onclick="deleteArchive(${ai})" title="Delete permanently"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>`;
+    });
+  });
+  return html;
+}
+function restoreArchive(i){
+  const t=data.archive.splice(i,1)[0];
+  const list=t.archivedFrom||'today';
+  delete t.archivedAt; delete t.archivedFrom;
+  t.done=false;
+  data[list].push(t);
+  save();
+}
+function deleteArchive(i){if(!confirm('Permanently delete?'))return;data.archive.splice(i,1);save();}
+
+// ── EXPORT ────────────────────────────────────────────────────
 function exportCSV(){
   const rows=[['List','Task','Priority','Due','Client','Done','MIT']];
   ['today','week'].forEach(list=>data[list].forEach(t=>rows.push([list,t.text,t.pri||'',t.due||'',t.client||'',t.done?'Yes':'No',t.mit?'Yes':'No'])));
