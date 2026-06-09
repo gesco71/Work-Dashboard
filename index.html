@@ -10,8 +10,8 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --accent:#4361ee;--accent2:#7209b7;--danger:#e63946;--warn:#f4a261;--success:#2a9d8f;
-  --bg:#f8f9fa;--surface:#fff;--border:#e9ecef;--text:#212529;--muted:#6c757d;--radius:8px;
+  --accent:#4895ef;--accent2:#b5179e;--danger:#e63946;--warn:#f4a261;--success:#2a9d8f;
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3250;--text:#e2e8f0;--muted:#8892b0;--radius:8px;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
@@ -29,79 +29,79 @@ nav::-webkit-scrollbar{display:none}
 main{max-width:760px;margin:0 auto;padding:16px}
 .section-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px}
 .input-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
-.input-row input[type=text]{flex:1;min-width:120px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;outline:none}
+.input-row input[type=text]{flex:1;min-width:120px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;outline:none;background:var(--surface2);color:var(--text)}
 .input-row input[type=text]:focus{border-color:var(--accent)}
-.input-row input[type=date]{padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;outline:none;color:var(--text);background:var(--surface)}
+.input-row input[type=date]{padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;outline:none;color:var(--text);background:var(--surface2)}
 .input-row input[type=date]:focus{border-color:var(--accent)}
-.input-row select{padding:7px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--surface);color:var(--text);outline:none;max-width:160px}
+.input-row select{padding:7px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;background:var(--surface2);color:var(--text);outline:none;max-width:160px}
 .input-row button{padding:7px 12px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-size:13px;white-space:nowrap}
 .input-row button:hover{opacity:.85}
 .mit-label{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);white-space:nowrap;cursor:pointer}
 .mit-label input{cursor:pointer;accent-color:var(--danger)}
 .task{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:5px;transition:all .15s}
-.task:hover{border-color:#adb5bd}
+.task:hover{border-color:#4a5568}
 .task.done .task-text{text-decoration:line-through;color:var(--muted)}
 .task.overdue{border-left:3px solid var(--danger)}
 .task.due-soon{border-left:3px solid var(--warn)}
 .task.mit-task{border-left:3px solid var(--danger)}
-.task.done.mit-task{border-left:3px solid #ccc}
+.task.done.mit-task{border-left:3px solid #2e3250}
 .task input[type=checkbox]{margin-top:2px;cursor:pointer;accent-color:var(--accent);flex-shrink:0}
 .task-body{flex:1;min-width:0}
 .task-text{font-size:13px;line-height:1.4;word-break:break-word}
 .task-meta{display:flex;gap:5px;margin-top:3px;flex-wrap:wrap;align-items:center}
 .tag{font-size:10px;padding:1px 6px;border-radius:10px;font-weight:500}
-.tag-pri-high{background:#ffeaea;color:#c0392b}
-.tag-pri-med{background:#fff3e0;color:#e65100}
-.tag-pri-low{background:#e8f5e9;color:#2e7d32}
-.tag-due{background:#e3f2fd;color:#1565c0}
-.tag-due.overdue{background:#ffeaea;color:#c0392b}
-.tag-due.due-soon{background:#fff3e0;color:#e65100}
-.tag-client{background:#f3e5f5;color:#6a1b9a}
-.tag-mit{background:#ffeaea;color:#c0392b;font-weight:700}
-.tag-weekly{background:#e8f5e9;color:#2e7d32}
+.tag-pri-high{background:#3d1515;color:#f87171}
+.tag-pri-med{background:#3d2a10;color:#fb923c}
+.tag-pri-low{background:#0d2a1a;color:#4ade80}
+.tag-due{background:#0d1f3d;color:#60a5fa}
+.tag-due.overdue{background:#3d1515;color:#f87171}
+.tag-due.due-soon{background:#3d2a10;color:#fb923c}
+.tag-client{background:#2a0d3d;color:#c084fc}
+.tag-mit{background:#3d1515;color:#f87171;font-weight:700}
+.tag-weekly{background:#0d2a1a;color:#4ade80}
 .task-actions{display:flex;gap:4px;opacity:0;transition:opacity .15s;flex-shrink:0}
 .task:hover .task-actions{opacity:1}
 @media(max-width:600px){.task-actions{opacity:1}}
 .act-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:2px 4px;border-radius:4px;font-size:14px;line-height:1}
-.act-btn:hover{color:var(--text);background:#f1f3f5}
+.act-btn:hover{color:var(--text);background:var(--surface2)}
 .empty{text-align:center;padding:28px 16px;color:var(--muted);font-size:13px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:16px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;text-align:center}
 .stat-num{font-size:22px;font-weight:700;color:var(--accent)}
 .stat-num.red{color:var(--danger)}
 .stat-label{font-size:11px;color:var(--muted);margin-top:2px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
-.modal{background:var(--surface);border-radius:12px;padding:20px;width:100%;max-width:400px}
-.modal h3{font-size:15px;font-weight:600;margin-bottom:14px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;width:100%;max-width:400px}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:14px;color:var(--text)}
 .modal label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px;margin-top:10px}
-.modal input,.modal select,.modal textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;outline:none;font-family:inherit;background:var(--surface);color:var(--text)}
+.modal input,.modal select,.modal textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;outline:none;font-family:inherit;background:var(--surface2);color:var(--text)}
 .modal input:focus,.modal select:focus{border-color:var(--accent)}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
-.btn-cancel{padding:7px 14px;border:1px solid var(--border);background:none;border-radius:var(--radius);cursor:pointer;font-size:13px}
+.btn-cancel{padding:7px 14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:var(--radius);cursor:pointer;font-size:13px}
 .btn-save{padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-size:13px}
 .client-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden}
-.client-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f8f9fa;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.client-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
 .client-name{font-weight:600;font-size:13px}
 .client-count{font-size:11px;color:var(--muted)}
 .client-body{padding:10px 12px;display:none}
 .review-section{margin-bottom:20px}
 .review-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .review-item{display:flex;align-items:flex-start;gap:8px;padding:6px 10px;border-radius:var(--radius);margin-bottom:4px;font-size:13px;background:var(--surface);border:1px solid var(--border)}
-.review-item.overdue{background:#fff5f5;border-color:#ffcdd2}
-.review-item.done{background:#f0faf8;border-color:#b2dfdb}
+.review-item.overdue{background:#2d1a1a;border-color:#5c2a2a}
+.review-item.done{background:#0d2a26;border-color:#1a4a42}
 .src-tag{font-size:10px;padding:1px 5px;border-radius:8px;flex-shrink:0}
 .view-toggle{display:flex;gap:4px;margin-bottom:12px}
-.view-btn{padding:5px 10px;border:1px solid var(--border);background:var(--surface);border-radius:var(--radius);cursor:pointer;font-size:12px;color:var(--muted)}
+.view-btn{padding:5px 10px;border:1px solid var(--border);background:var(--surface2);border-radius:var(--radius);cursor:pointer;font-size:12px;color:var(--muted)}
 .view-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .kanban{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
-.kanban-col{background:#f8f9fa;border:1px solid var(--border);border-radius:var(--radius);padding:10px}
+.kanban-col{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px}
 .kanban-col-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
 .goal-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px}
 .goal-title-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
 .goal-title{font-weight:600;font-size:13px;flex:1}
-.progress-bar{height:4px;background:#e9ecef;border-radius:2px;margin:6px 0}
+.progress-bar{height:4px;background:var(--surface2);border-radius:2px;margin:6px 0}
 .progress-fill{height:100%;background:var(--accent);border-radius:2px}
-.step-item{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f3f5}
+.step-item{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;border-bottom:1px solid var(--border)}
 .prospect-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px}
 .sync-note{text-align:center;font-size:11px;color:var(--muted);margin-top:20px;padding-top:12px;border-top:1px solid var(--border)}
 </style>
@@ -111,7 +111,7 @@ main{max-width:760px;margin:0 auto;padding:16px}
 <header>
   <div class="logo"><i class="ti ti-layout-dashboard"></i> Work Dashboard</div>
   <div style="display:flex;align-items:center;gap:10px">
-    <button onclick="exportCSV()" style="background:none;border:1px solid var(--border);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--muted)"><i class="ti ti-download"></i> Export</button>
+    <button onclick="exportCSV()" style="background:var(--surface2);border:1px solid var(--border);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--muted)"><i class="ti ti-download"></i> Export</button>
     <div class="status"><div class="dot" id="dot"></div><span id="status-txt">Connecting...</span></div>
   </div>
 </header>
@@ -444,7 +444,7 @@ function renderGoals(){
         <button class="act-btn" style="margin-left:auto" onclick="deleteStep(${i},${si})"><i class="ti ti-x"></i></button>
       </div>`).join('')}
       <div style="display:flex;gap:6px;margin-top:8px">
-        <input type="text" id="step-${i}" placeholder="Add step..." style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none" onkeypress="if(event.key==='Enter')addStep(${i})">
+        <input type="text" id="step-${i}" placeholder="Add step..." style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;background:var(--surface2);color:var(--text)" onkeypress="if(event.key==='Enter')addStep(${i})">
         <button onclick="addStep(${i})" style="padding:5px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">Add Step</button>
       </div>
     </div>`;
@@ -474,7 +474,7 @@ function renderClients(){
       </div>
       <div class="client-body" id="cbody-${sid}">
         <div class="input-row">
-          <input type="text" id="ct-${sid}" placeholder="Add task for ${name}..." onkeypress="if(event.key==='Enter')addClientTask('${name}','${sid}')">
+          <input type="text" id="ct-${sid}" placeholder="Add task for ${name}..." onkeypress="if(event.key==='Enter')addClientTask('${name}','${sid}')" style="flex:1;background:var(--surface2);color:var(--text)">
           <input type="date" id="ctd-${sid}">
           <select id="ctp-${sid}"><option value="high">High</option><option value="med" selected>Med</option><option value="low">Low</option></select>
           <button onclick="addClientTask('${name}','${sid}')"><i class="ti ti-plus"></i> Add</button>
@@ -491,7 +491,7 @@ function clientTaskHTML(t,clientName,idx){
   let cls='task';
   if(t.done)cls+=' done';
   if(!t.done&&dc==='overdue')cls+=' overdue';
-  const srcTag=t.sourceList?`<span class="tag src-tag" style="background:#e3f2fd;color:#1565c0">${t.sourceList==='today'?'Daily':'Weekly'}</span>`:'';
+  const srcTag=t.sourceList?`<span class="tag src-tag" style="background:#0d1f3d;color:#60a5fa">${t.sourceList==='today'?'Daily':'Weekly'}</span>`:'';
   return`<div class="${cls}">
     <input type="checkbox"${t.done?' checked':''} onchange="toggleClientTask('${clientName}',${idx})">
     <div class="task-body">
@@ -550,13 +550,13 @@ function renderProspects(){
         <div style="font-size:12px;color:var(--muted)">${p.due?'Follow-up: '+fmtDate(p.due):'No follow-up set'}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#e8f5e9;color:#2e7d32">${p.status||'Active'}</span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#0d2a1a;color:#4ade80">${p.status||'Active'}</span>
         <button class="act-btn" onclick="deleteProspect(${i})"><i class="ti ti-trash"></i></button>
       </div>
     </div>
     <div style="margin-top:8px">
-      <input type="text" placeholder="Add note..." id="pnote-${i}" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none" onkeypress="if(event.key==='Enter')addProspectNote(${i})">
-      ${(p.notes||[]).map(n=>`<div style="font-size:12px;color:var(--muted);padding:3px 0;border-bottom:1px solid #f1f3f5">${n}</div>`).join('')}
+      <input type="text" placeholder="Add note..." id="pnote-${i}" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;background:var(--surface2);color:var(--text)" onkeypress="if(event.key==='Enter')addProspectNote(${i})">
+      ${(p.notes||[]).map(n=>`<div style="font-size:12px;color:var(--muted);padding:3px 0;border-bottom:1px solid var(--border)">${n}</div>`).join('')}
     </div>
   </div>`).join('');
   return`<div class="section-title">Prospects</div>${addRow}${list||'<div class="empty">No prospects yet</div>'}`;
@@ -605,7 +605,7 @@ function renderReview(){
   </div>`;
 
   function ri(x){
-    const srcColor=x.sourceList==='Weekly'?'background:#e8f5e9;color:#2e7d32':'background:#e3f2fd;color:#1565c0';
+    const srcColor=x.sourceList==='Weekly'?'background:#0d2a1a;color:#4ade80':'background:#0d1f3d;color:#60a5fa';
     return`<div class="review-item${x.done?' done':!x.done&&x.due&&x.due<t?' overdue':''}">
       <span class="src-tag" style="${srcColor}">${x.sourceList}</span>
       <span style="flex:1">${x.text}</span>
