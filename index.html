@@ -170,9 +170,10 @@ const CLIENT_LIST = [
 ];
 
 let data = {today:[],week:[],goals:[],clients:{},prospects:[],questions:[]};
-let activeTab = 'today';
+let activeTab = 'goals';
 let viewMode = 'list';
 let editCtx = null;
+let openClients = new Set();
 
 function loadData(){
   dataRef.on('value', snap => {
@@ -355,14 +356,14 @@ function saveEdit(){
 function renderTabs(){
   const s=getStats();
   const tabs=[
+    {id:'goals',label:'Goals',icon:'ti-target'},
+    {id:'mits',label:'MITs',icon:'ti-star',badge:s.mits||null},
+    {id:'review',label:'Review',icon:'ti-chart-bar',badge:s.overdue||null},
     {id:'today',label:'Today',icon:'ti-sun'},
     {id:'week',label:'Week',icon:'ti-calendar-week'},
-    {id:'mits',label:'MITs',icon:'ti-star',badge:s.mits||null},
-    {id:'goals',label:'Goals',icon:'ti-target'},
     {id:'clients',label:'Clients',icon:'ti-building'},
     {id:'prospects',label:'Prospects',icon:'ti-user-search'},
-    {id:'questions',label:'Questions',icon:'ti-help'},
-    {id:'review',label:'Review',icon:'ti-chart-bar',badge:s.overdue||null}
+    {id:'questions',label:'Questions',icon:'ti-help'}
   ];
   document.getElementById('nav').innerHTML=tabs.map(t=>
     `<button class="tab${activeTab===t.id?' active':''}" onclick="switchTab('${t.id}')">
@@ -457,22 +458,34 @@ function toggleStep(gi,si){data.goals[gi].steps[si].done=!data.goals[gi].steps[s
 function deleteStep(gi,si){data.goals[gi].steps.splice(si,1);save();}
 
 function renderClients(){
+  const filter=(document.getElementById('client-search')||{}).value||'';
+  const filtered=filter?CLIENT_LIST.filter(n=>n.toLowerCase().includes(filter.toLowerCase())):CLIENT_LIST;
   let html=`<div class="section-title">Clients (${CLIENT_LIST.length})</div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Tasks assigned from Daily or Weekly appear here automatically. You can also add tasks directly to any client.</p>`;
-  CLIENT_LIST.forEach(name=>{
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
+      <div style="position:relative;flex:1">
+        <i class="ti ti-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px"></i>
+        <input type="text" id="client-search" placeholder="Search clients..." oninput="renderClientsInPlace()" value="${filter}"
+          style="width:100%;padding:7px 10px 7px 30px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;outline:none;background:var(--surface2);color:var(--text)">
+      </div>
+      <button onclick="openClients=new Set(CLIENT_LIST.map(n=>n.replace(/[^a-zA-Z0-9]/g,'_')));renderClientsInPlace()" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:12px;color:var(--muted)" title="Expand all"><i class="ti ti-chevrons-down"></i></button>
+      <button onclick="openClients=new Set();renderClientsInPlace()" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:12px;color:var(--muted)" title="Collapse all"><i class="ti ti-chevrons-up"></i></button>
+    </div>
+    <div id="clients-list">`;
+  filtered.forEach(name=>{
     const stored=data.clients[name]||{tasks:[]};
     const tasks=stored.tasks||[];
     const active=tasks.filter(t=>!t.done).length;
     const sid=name.replace(/[^a-zA-Z0-9]/g,'_');
+    const isOpen=openClients.has(sid);
     html+=`<div class="client-block">
       <div class="client-header" onclick="toggleClient('${sid}')">
         <div>
           <div class="client-name"><i class="ti ti-building" style="color:var(--accent);margin-right:5px"></i>${name}</div>
           <div class="client-count">${active} active · ${tasks.length} total</div>
         </div>
-        <i class="ti ti-chevron-down" id="chev-${sid}" style="transition:transform .2s;color:var(--muted)"></i>
+        <i class="ti ti-chevron-down" id="chev-${sid}" style="transition:transform .2s;color:var(--muted);${isOpen?'transform:rotate(180deg)':''}"></i>
       </div>
-      <div class="client-body" id="cbody-${sid}">
+      <div class="client-body" id="cbody-${sid}" style="display:${isOpen?'block':'none'}">
         <div class="input-row">
           <input type="text" id="ct-${sid}" placeholder="Add task for ${name}..." onkeypress="if(event.key==='Enter')addClientTask('${name}','${sid}')" style="flex:1;background:var(--surface2);color:var(--text)">
           <input type="date" id="ctd-${sid}">
@@ -483,7 +496,42 @@ function renderClients(){
       </div>
     </div>`;
   });
+  html+=`</div>`;
+  if(!filtered.length) html+=`<div class="empty">No clients match "${filter}"</div>`;
   return html;
+}
+
+function renderClientsInPlace(){
+  const filter=document.getElementById('client-search').value||'';
+  const filtered=filter?CLIENT_LIST.filter(n=>n.toLowerCase().includes(filter.toLowerCase())):CLIENT_LIST;
+  let html='';
+  filtered.forEach(name=>{
+    const stored=data.clients[name]||{tasks:[]};
+    const tasks=stored.tasks||[];
+    const active=tasks.filter(t=>!t.done).length;
+    const sid=name.replace(/[^a-zA-Z0-9]/g,'_');
+    const isOpen=openClients.has(sid);
+    html+=`<div class="client-block">
+      <div class="client-header" onclick="toggleClient('${sid}')">
+        <div>
+          <div class="client-name"><i class="ti ti-building" style="color:var(--accent);margin-right:5px"></i>${name}</div>
+          <div class="client-count">${active} active · ${tasks.length} total</div>
+        </div>
+        <i class="ti ti-chevron-down" id="chev-${sid}" style="transition:transform .2s;color:var(--muted);${isOpen?'transform:rotate(180deg)':''}"></i>
+      </div>
+      <div class="client-body" id="cbody-${sid}" style="display:${isOpen?'block':'none'}">
+        <div class="input-row">
+          <input type="text" id="ct-${sid}" placeholder="Add task for ${name}..." onkeypress="if(event.key==='Enter')addClientTask('${name}','${sid}')" style="flex:1;background:var(--surface2);color:var(--text)">
+          <input type="date" id="ctd-${sid}">
+          <select id="ctp-${sid}"><option value="high">High</option><option value="med" selected>Med</option><option value="low">Low</option></select>
+          <button onclick="addClientTask('${name}','${sid}')"><i class="ti ti-plus"></i> Add</button>
+        </div>
+        ${tasks.length?tasks.map((t,ti)=>clientTaskHTML(t,name,ti)).join(''):'<div class="empty">No tasks yet</div>'}
+      </div>
+    </div>`;
+  });
+  const el=document.getElementById('clients-list');
+  if(el) el.innerHTML=html||`<div class="empty">No clients match "${filter}"</div>`;
 }
 
 function clientTaskHTML(t,clientName,idx){
@@ -514,14 +562,17 @@ function toggleClient(sid){
   const open=b.style.display==='block';
   b.style.display=open?'none':'block';
   c.style.transform=open?'':'rotate(180deg)';
+  if(open) openClients.delete(sid); else openClients.add(sid);
 }
 function addClientTask(clientName,sid){
   const txt=document.getElementById('ct-'+sid).value.trim();
   if(!txt)return;
   if(!data.clients[clientName])data.clients[clientName]={tasks:[]};
   data.clients[clientName].tasks.push({id:uid(),text:txt,pri:document.getElementById('ctp-'+sid).value,due:document.getElementById('ctd-'+sid).value||null,done:false,client:clientName});
+  openClients.add(sid);
   save();
   document.getElementById('ct-'+sid).value='';
+  document.getElementById('ctd-'+sid).value='';
 }
 function toggleClientTask(clientName,idx){
   if(!data.clients[clientName])return;
