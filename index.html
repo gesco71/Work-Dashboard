@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Work Dashboard</title>
+<meta name="theme-color" content="#0f1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dashboard">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Work Dashboard","short_name":"Dashboard","start_url":".","display":"standalone","background_color":"%230f1117","theme_color":"%230f1117"}'>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -136,6 +142,38 @@ input[type=date]{color-scheme:dark}
 /* archive toggle */
 .archive-toggle{font-size:12px;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-top:8px;margin-bottom:4px;background:none;border:none;padding:0}
 .archive-toggle:hover{color:var(--text)}
+/* mic + voice capture */
+.mic-btn{padding:7px 10px;background:var(--surface2);border:1px solid var(--border);color:var(--accent);border-radius:var(--radius);cursor:pointer;font-size:15px;line-height:1}
+.mic-btn:hover{border-color:var(--accent)}
+.fab{display:none;position:fixed;bottom:22px;right:18px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:24px;cursor:pointer;z-index:150;box-shadow:0 4px 16px rgba(0,0,0,.5);align-items:center;justify-content:center}
+.fab:active{transform:scale(.95)}
+.voice-transcript{min-height:54px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);font-size:14px;line-height:1.5;color:var(--text);margin-top:8px}
+.voice-pulse{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--danger);margin-right:6px;animation:pulse 1.2s infinite}
+.voice-hint{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
+/* inbox */
+.inbox-actions{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.inbox-btn{padding:5px 10px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:var(--radius);cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.inbox-btn:hover{border-color:var(--accent);color:var(--accent)}
+/* expanded notes/steps labels */
+.mini-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:6px 0 3px}
+/* ── MOBILE LAYER (≤600px) ── */
+@media(max-width:600px){
+  .fab{display:flex}
+  main{padding:12px 10px 90px}
+  .input-row input[type=text]{flex:1 1 100%;padding:10px 12px;font-size:14px}
+  .input-row input[type=date],.input-row select{flex:1;padding:10px 8px;font-size:14px;max-width:none}
+  .input-row button{padding:10px 14px;font-size:14px}
+  .mic-btn{padding:10px 12px;font-size:18px}
+  .act-btn{font-size:18px;padding:6px 8px}
+  .mit-star{font-size:19px;padding:4px 6px}
+  .task{padding:10px}
+  .task input[type=checkbox]{width:19px;height:19px}
+  .tab{padding:12px 13px;font-size:13px}
+  .modal-overlay{padding:0;align-items:flex-end}
+  .modal{max-width:100%;max-height:94vh;border-radius:14px 14px 0 0;padding:18px 16px 26px}
+  .modal input,.modal select,.modal textarea{padding:11px 12px;font-size:14px}
+  .btn-cancel,.btn-save,.btn-danger{padding:11px 18px;font-size:14px}
+}
 </style>
 </head>
 <body>
@@ -143,6 +181,7 @@ input[type=date]{color-scheme:dark}
 <header>
   <div class="logo"><i class="ti ti-layout-dashboard"></i> Work Dashboard</div>
   <div style="display:flex;align-items:center;gap:10px">
+    <button onclick="exportJSON()" style="background:var(--surface2);border:1px solid var(--border);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--muted)" title="Full data backup"><i class="ti ti-database-export"></i> Backup</button>
     <button onclick="exportCSV()" style="background:var(--surface2);border:1px solid var(--border);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--muted)"><i class="ti ti-download"></i> Export</button>
     <div class="status"><div class="dot" id="dot"></div><span id="status-txt">Connecting...</span></div>
   </div>
@@ -208,6 +247,52 @@ input[type=date]{color-scheme:dark}
   </div>
 </div>
 
+<!-- Voice Capture Modal -->
+<div class="modal-overlay" id="voice-modal" style="display:none" onclick="if(event.target===this)closeVoice()">
+  <div class="modal">
+    <h3><i class="ti ti-microphone" style="color:var(--accent)"></i> Voice Capture</h3>
+
+    <div id="voice-listen">
+      <div id="voice-status" style="font-size:13px;color:var(--text)"><span class="voice-pulse"></span>Listening — speak your task...</div>
+      <div class="voice-transcript" id="voice-transcript"></div>
+      <div class="voice-hint">Try: <em>"Send proposal follow-up to Veranex, due Friday, high priority"</em><br>
+      Say a client name, a day ("tomorrow", "Friday", "June 20th"), "high/low priority", "MIT", and "today" or "weekly" to pick the list.</div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeVoice()">Cancel</button>
+        <button class="btn-save" onclick="finishListening()"><i class="ti ti-check"></i> Done Speaking</button>
+      </div>
+    </div>
+
+    <div id="voice-preview" style="display:none">
+      <div style="font-size:12px;color:var(--success);margin-bottom:4px"><i class="ti ti-wand"></i> Here's what I heard — adjust anything, then save:</div>
+      <label>Task</label>
+      <input type="text" id="voice-text">
+      <label>Add to List</label>
+      <select id="voice-list">
+        <option value="inbox">Inbox (triage later)</option>
+        <option value="today">Today</option>
+        <option value="week">Week</option>
+      </select>
+      <label>Client</label>
+      <select id="voice-client"></select>
+      <label>Due Date</label>
+      <input type="date" id="voice-due">
+      <label>Priority</label>
+      <select id="voice-pri"><option value="high">High</option><option value="med">Med</option><option value="low">Low</option></select>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:12px">
+        <input type="checkbox" id="voice-mit" style="width:auto;cursor:pointer;accent-color:var(--danger)"> Mark as MIT
+      </label>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="restartVoice()"><i class="ti ti-microphone"></i> Re-record</button>
+        <button class="btn-cancel" onclick="closeVoice()">Cancel</button>
+        <button class="btn-save" onclick="saveVoiceTask()">Save Task</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="fab" onclick="startVoice(null)" title="Voice capture"><i class="ti ti-microphone"></i></button>
+
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyAZGjmWkWZ63cXk0XNZe-b6WZa3GUDkMjI",
@@ -233,7 +318,7 @@ const CLIENT_LIST = [
   "Virginia Green","Weidmeuller","Weinstein","West Creek Financial"
 ];
 
-let data = {today:[],week:[],goals:[],clients:{},prospects:[],questions:[],projects:[],archive:[]};
+let data = {inbox:[],today:[],week:[],goals:[],clients:{},prospects:[],questions:[],projects:[],archive:[]};
 let activeTab = 'goals';
 let viewMode = 'list';
 let editCtx = null;
@@ -246,6 +331,7 @@ function loadData(){
   dataRef.on('value', snap => {
     const val = snap.val();
     if(val){
+      data.inbox     = val.inbox     || [];
       data.today     = val.today     || [];
       data.week      = val.week      || [];
       data.goals     = val.goals     || [];
@@ -331,9 +417,9 @@ function taskHTML(t, list, idx){
         ${weeklyTag}
       </div>
       ${hasNotes?`<div class="task-notes ${notesOpen?'open':''}" id="notes-${t.id}">
-        ${t.notes?`${notesHTML(t.notes)}`:''}
+        ${t.notes?`<div class="mini-label">Notes — context (edit via pencil)</div>${notesHTML(t.notes)}`:''}
         ${t.onenote?`<a href="${t.onenote}" target="_blank" class="onenote-link"><i class="ti ti-notebook" style="font-size:11px"></i> Open in OneNote</a>`:''}
-        ${stepsHTML}
+        ${(t.steps&&t.steps.length)?`<div class="mini-label">Steps — checklist</div>`:''}${stepsHTML}
         <div style="display:flex;gap:5px;margin-top:6px">
           <input type="text" id="newstep-${t.id}" placeholder="Add step..." style="flex:1;padding:4px 7px;border:1px solid var(--border);border-radius:5px;font-size:12px;background:var(--surface2);color:var(--text);outline:none"
             onkeypress="if(event.key==='Enter')addStep('${list}',${idx})">
@@ -385,6 +471,7 @@ function inputRowHTML(list, placeholder){
     <select id="${list}-pri"><option value="high">High</option><option value="med" selected>Med</option><option value="low">Low</option></select>
     <select id="${list}-client" style="max-width:160px">${clientSelectOpts('')}</select>
     <label class="mit-label"><input type="checkbox" id="${list}-mit"> MIT</label>
+    <button class="mic-btn" onclick="startVoice('${list}')" title="Add by voice"><i class="ti ti-microphone"></i></button>
     <button onclick="quickAdd('${list}')"><i class="ti ti-plus"></i> Add</button>
   </div>`;
 }
@@ -517,6 +604,7 @@ function saveEdit(){
 function renderTabs(){
   const s=getStats();
   const tabs=[
+    {id:'inbox',label:'Inbox',icon:'ti-inbox',badge:(data.inbox||[]).length||null},
     {id:'goals',label:'Goals',icon:'ti-target'},
     {id:'mits',label:'MITs',icon:'ti-star',badge:s.mits||null},
     {id:'review',label:'Review',icon:'ti-chart-bar',badge:s.overdue||null},
@@ -540,7 +628,7 @@ function render(){
   renderTabs();
   const m=document.getElementById('main');
   const tabs={
-    today:renderToday,week:renderWeek,mits:renderMITs,goals:renderGoals,
+    inbox:renderInbox,today:renderToday,week:renderWeek,mits:renderMITs,goals:renderGoals,
     clients:renderClients,projects:renderProjects,prospects:renderProspects,
     questions:renderQuestions,review:renderReview,archive:renderArchive
   };
@@ -975,10 +1063,245 @@ function restoreArchive(i){
 }
 function deleteArchive(i){if(!confirm('Permanently delete?'))return;data.archive.splice(i,1);save();}
 
+// ── INBOX ─────────────────────────────────────────────────────
+function renderInbox(){
+  const items=data.inbox||[];
+  const addRow=`<div class="input-row">
+    <input type="text" id="inbox-quick" placeholder="Quick capture — just the idea, triage later..." onkeypress="if(event.key==='Enter')quickInbox()">
+    <button class="mic-btn" onclick="startVoice('inbox')" title="Add by voice"><i class="ti ti-microphone"></i></button>
+    <button onclick="quickInbox()"><i class="ti ti-plus"></i> Add</button>
+  </div>`;
+  const list=items.map((t,i)=>`<div class="task">
+    <i class="ti ti-inbox" style="color:var(--accent);margin-top:3px;flex-shrink:0"></i>
+    <div class="task-body">
+      <div class="task-text">${t.text}</div>
+      <div class="task-meta">
+        ${t.pri?`<span class="tag tag-pri-${t.pri}">${t.pri.toUpperCase()}</span>`:''}
+        ${t.due?`<span class="tag tag-due ${dateClass(t.due)}">${fmtDate(t.due)}</span>`:''}
+        ${t.client?`<span class="tag tag-client"><i class="ti ti-building" style="font-size:9px"></i> ${t.client}</span>`:''}
+        ${t.mit?'<span class="tag tag-mit">★ MIT</span>':''}
+      </div>
+      <div class="inbox-actions">
+        <button class="inbox-btn" onclick="moveInbox(${i},'today')"><i class="ti ti-sun"></i> Today</button>
+        <button class="inbox-btn" onclick="moveInbox(${i},'week')"><i class="ti ti-calendar-week"></i> Week</button>
+        <button class="inbox-btn" onclick="openEdit('inbox',${i})"><i class="ti ti-pencil"></i> Edit</button>
+        <button class="inbox-btn" onclick="deleteTask('inbox',${i})"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>
+  </div>`).join('');
+  return`<div class="section-title">Inbox — Capture &amp; Triage</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Voice captures and quick thoughts land here. Send each one to Today or Week when you triage — or edit first to add a client and date.</p>
+    ${addRow}
+    ${list||'<div class="empty">Inbox zero — nicely done</div>'}`;
+}
+function quickInbox(){
+  const el=document.getElementById('inbox-quick');
+  const txt=el.value.trim();
+  if(!txt)return;
+  data.inbox.push({id:uid(),text:txt,pri:'med',due:null,done:false,client:null,mit:false,notes:'',onenote:'',steps:[]});
+  save();
+  el.value='';
+}
+function moveInbox(i,list){
+  const t=data.inbox.splice(i,1)[0];
+  data[list].push(t);
+  if(t.client){
+    if(!data.clients[t.client])data.clients[t.client]={tasks:[]};
+    const ci=data.clients[t.client].tasks.findIndex(x=>x.id===t.id);
+    if(ci>=0)data.clients[t.client].tasks[ci]={...t,sourceList:list};
+    else data.clients[t.client].tasks.push({...t,sourceList:list});
+  }
+  save();
+}
+
+// ── VOICE CAPTURE ─────────────────────────────────────────────
+let recog=null, voiceDefaultList=null, voiceFinal='', voiceInterim='';
+function speechSupported(){return!!(window.SpeechRecognition||window.webkitSpeechRecognition);}
+
+function startVoice(defaultList){
+  voiceDefaultList=defaultList;
+  voiceFinal=''; voiceInterim='';
+  document.getElementById('voice-modal').style.display='flex';
+  if(!speechSupported()){
+    // No speech API — fall straight to manual entry form
+    showVoicePreview({text:'',list:defaultList||'inbox',client:null,due:null,pri:'med',mit:false});
+    document.querySelector('#voice-preview div').innerHTML='<i class="ti ti-microphone-off"></i> Voice isn\'t supported in this browser — type the task instead:';
+    return;
+  }
+  document.getElementById('voice-preview').style.display='none';
+  document.getElementById('voice-listen').style.display='block';
+  document.getElementById('voice-transcript').textContent='';
+  document.getElementById('voice-status').innerHTML='<span class="voice-pulse"></span>Listening — speak your task...';
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  recog=new SR();
+  recog.lang='en-US';
+  recog.interimResults=true;
+  recog.continuous=true;
+  recog.onresult=e=>{
+    voiceInterim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal)voiceFinal+=e.results[i][0].transcript+' ';
+      else voiceInterim+=e.results[i][0].transcript;
+    }
+    document.getElementById('voice-transcript').textContent=(voiceFinal+voiceInterim).trim();
+  };
+  recog.onerror=e=>{
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+      document.getElementById('voice-status').innerHTML='<i class="ti ti-microphone-off" style="color:var(--danger)"></i> Microphone blocked — allow mic access for this site in your browser settings, then try again.';
+    }
+  };
+  recog.onend=()=>{ if(document.getElementById('voice-listen').style.display!=='none'&&(voiceFinal+voiceInterim).trim())finishListening(); };
+  try{recog.start();}catch(e){}
+}
+function finishListening(){
+  if(recog){try{recog.stop();}catch(e){} recog=null;}
+  const raw=(voiceFinal+voiceInterim).trim();
+  if(!raw){closeVoice();return;}
+  showVoicePreview(parseVoice(raw));
+}
+function showVoicePreview(p){
+  document.getElementById('voice-listen').style.display='none';
+  document.getElementById('voice-preview').style.display='block';
+  document.getElementById('voice-text').value=p.text||'';
+  document.getElementById('voice-list').value=voiceDefaultList||p.list||'inbox';
+  document.getElementById('voice-client').innerHTML=clientSelectOpts(p.client||'');
+  document.getElementById('voice-due').value=p.due||'';
+  document.getElementById('voice-pri').value=p.pri||'med';
+  document.getElementById('voice-mit').checked=!!p.mit;
+}
+function restartVoice(){startVoice(voiceDefaultList);}
+function closeVoice(){
+  if(recog){try{recog.stop();}catch(e){} recog=null;}
+  document.getElementById('voice-modal').style.display='none';
+}
+function saveVoiceTask(){
+  const txt=document.getElementById('voice-text').value.trim();
+  if(!txt)return;
+  const list=document.getElementById('voice-list').value;
+  const client=document.getElementById('voice-client').value||null;
+  const task={
+    id:uid(),text:txt,
+    pri:document.getElementById('voice-pri').value,
+    due:document.getElementById('voice-due').value||null,
+    done:false,client,
+    mit:document.getElementById('voice-mit').checked,
+    notes:'',onenote:'',steps:[]
+  };
+  data[list].push(task);
+  if(client&&list!=='inbox'){
+    if(!data.clients[client])data.clients[client]={tasks:[]};
+    data.clients[client].tasks.push({...task,sourceList:list});
+  }
+  save();
+  closeVoice();
+}
+
+// ── SPOKEN-LANGUAGE PARSER ────────────────────────────────────
+function parseVoice(raw){
+  let text=' '+raw.toLowerCase().replace(/[.!?]+/g,' ')+' ';
+  const res={text:raw.trim(),list:null,client:null,due:null,pri:'med',mit:false};
+
+  // Client: match against the 46-client list (all significant name tokens must appear)
+  let best=null;
+  CLIENT_LIST.forEach(c=>{
+    const toks=c.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().split(' ').filter(t=>t.length>1);
+    if(toks.length&&toks.every(t=>new RegExp('\\b'+t+'\\b','i').test(text))){
+      if(!best||toks.length>best.toks.length)best={c,toks};
+    }
+  });
+  if(best){
+    res.client=best.c;
+    const phrase=best.toks.join('[^a-z0-9]{1,3}');
+    text=text.replace(new RegExp('\\b(for|with|to|client)?\\s*'+phrase+"('s)?\\b",'i'),' ');
+  }
+
+  // Priority
+  if(/\b(high|top) priority\b|\burgent\b/.test(text)){res.pri='high';text=text.replace(/\b(as |with |make (it |this )?)?((high|top) priority|urgent)\b/,' ');}
+  else if(/\blow priority\b/.test(text)){res.pri='low';text=text.replace(/\b(as |with |make (it |this )?)?low priority\b/,' ');}
+  else if(/\b(medium|med) priority\b/.test(text)){res.pri='med';text=text.replace(/\b(as |with |make (it |this )?)?(medium|med) priority\b/,' ');}
+
+  // MIT
+  if(/\b(mit|m\.i\.t\.|most important( task)?)\b/.test(text)){res.mit=true;text=text.replace(/\b(mark (it |this )?as |as |make (it |this )?)?(an? )?(mit|m\.i\.t\.|most important( task)?)\b/,' ');}
+
+  // Due date
+  const d=parseSpokenDate(text);
+  if(d){res.due=d.date;text=text.replace(d.re,' ');}
+
+  // List keywords
+  if(/\b(weekly|this week|next week)\b/.test(text)){res.list='week';text=text.replace(/\b(add (it |this )?to (my )?)?(weekly( list| tasks)?|this week|next week)\b/,' ');}
+  else if(/\b(daily|today|tonight)\b/.test(text)){res.list='today';text=text.replace(/\b(add (it |this )?to (my )?)?(daily( list| tasks)?|today|tonight)\b/,' ');}
+  if(!res.list){
+    if(res.due&&res.due<=todayStr())res.list='today';
+    else if(res.due)res.list='week';
+    else res.list='inbox';
+  }
+
+  // Cleanup leftover connector words at the edges
+  text=text.replace(/\s{2,}/g,' ').trim();
+  let prev='';
+  while(prev!==text){
+    prev=text;
+    text=text.replace(/\s*\b(due|by|on|and|for|the|a|to|is|it|its)\b\s*$/i,'').replace(/^\s*\b(and|also|please|hey|ok|okay|so|um|uh)\b\s*/i,'').replace(/[,;:]+$/,'').trim();
+  }
+  if(text)res.text=text.charAt(0).toUpperCase()+text.slice(1);
+  return res;
+}
+
+function dplus(n){const d=new Date();d.setDate(d.getDate()+n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function parseSpokenDate(text){
+  const lead='(due |by |on |before |deadline )?';
+  let m;
+  m=text.match(new RegExp('\\b'+lead+'day after tomorrow\\b'));
+  if(m)return{date:dplus(2),re:new RegExp(m[0])};
+  m=text.match(new RegExp('\\b'+lead+'tomorrow\\b'));
+  if(m)return{date:dplus(1),re:new RegExp(m[0])};
+  m=text.match(new RegExp('\\b'+lead+'end of (the )?week\\b'));
+  if(m){const now=new Date();let diff=(5-now.getDay()+7)%7;if(diff===0)diff=0;return{date:dplus(diff),re:new RegExp(m[0])};}
+  const days={sunday:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6};
+  m=text.match(new RegExp('\\b'+lead+'(next )?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\\b'));
+  if(m){
+    const now=new Date();
+    let diff=(days[m[3]]-now.getDay()+7)%7;
+    if(diff===0)diff=7;
+    if(m[2])diff+=(diff<=2?7:0); // "next tuesday" said on Monday means the following week
+    return{date:dplus(diff),re:new RegExp(m[0])};
+  }
+  const months={january:0,february:1,march:2,april:3,may:4,june:5,july:6,august:7,september:8,october:9,november:10,december:11};
+  m=text.match(new RegExp('\\b'+lead+'(january|february|march|april|may|june|july|august|september|october|november|december) (\\d{1,2})(st|nd|rd|th)?\\b'));
+  if(m){
+    const now=new Date();
+    let y=now.getFullYear();
+    const mo=months[m[2]],day=parseInt(m[3]);
+    if(mo<now.getMonth()||(mo===now.getMonth()&&day<now.getDate()))y++;
+    return{date:y+'-'+String(mo+1).padStart(2,'0')+'-'+String(day).padStart(2,'0'),re:new RegExp(m[0])};
+  }
+  m=text.match(new RegExp('\\b'+lead+'the (\\d{1,2})(st|nd|rd|th)\\b'));
+  if(m){
+    const now=new Date();
+    const day=parseInt(m[2]);
+    let y=now.getFullYear(),mo=now.getMonth();
+    if(day<now.getDate()){mo++;if(mo>11){mo=0;y++;}}
+    return{date:y+'-'+String(mo+1).padStart(2,'0')+'-'+String(day).padStart(2,'0'),re:new RegExp(m[0])};
+  }
+  m=text.match(/\bin (\d+) days?\b/);
+  if(m)return{date:dplus(parseInt(m[1])),re:new RegExp(m[0])};
+  m=text.match(new RegExp('\\b(due |by |on |before |deadline )today\\b'));
+  if(m)return{date:todayStr(),re:new RegExp(m[0])};
+  return null;
+}
+
+// ── JSON BACKUP ───────────────────────────────────────────────
+function exportJSON(){
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(data,null,2));
+  a.download='dashboard-backup-'+todayStr()+'.json';
+  a.click();
+}
+
 // ── EXPORT ────────────────────────────────────────────────────
 function exportCSV(){
   const rows=[['List','Task','Priority','Due','Client','Done','MIT']];
-  ['today','week'].forEach(list=>data[list].forEach(t=>rows.push([list,t.text,t.pri||'',t.due||'',t.client||'',t.done?'Yes':'No',t.mit?'Yes':'No'])));
+  ['inbox','today','week'].forEach(list=>data[list].forEach(t=>rows.push([list,t.text,t.pri||'',t.due||'',t.client||'',t.done?'Yes':'No',t.mit?'Yes':'No'])));
   data.goals.forEach(t=>rows.push(['goals',t.text,t.pri||'',t.due||'','',t.done?'Yes':'No','']));
   const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='dashboard-'+todayStr()+'.csv';a.click();
