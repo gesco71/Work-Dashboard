@@ -32,7 +32,6 @@ nav::-webkit-scrollbar{display:none}
 .tab:hover{color:var(--text)}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
 .badge{background:var(--danger);color:#fff;font-size:9px;border-radius:10px;padding:1px 5px;margin-left:3px}
-main{max-width:760px;margin:0 auto;padding:16px}
 .section-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px}
 .input-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
 .input-row input[type=text]{flex:1;min-width:120px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;outline:none;background:var(--surface2);color:var(--text)}
@@ -139,7 +138,24 @@ input[type=date]{color-scheme:dark}
 /* prospects / projects */
 .card-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px}
 .sync-note{text-align:center;font-size:11px;color:var(--muted);margin-top:20px;padding-top:12px;border-top:1px solid var(--border)}
-/* archive toggle */
+/* ── SIDEBAR LAYOUT ── */
+.page-wrap{display:flex;align-items:flex-start;max-width:900px;margin:0 auto;padding:0}
+.date-sidebar{width:80px;flex-shrink:0;position:sticky;top:90px;padding:16px 0 16px 12px}
+.date-tile{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;text-align:center;min-width:60px}
+.date-tile-month{background:var(--danger);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:5px 4px 4px}
+.date-tile-day{font-size:28px;font-weight:800;color:var(--text);line-height:1;padding:6px 4px 2px}
+.date-tile-dow{font-size:10px;color:var(--muted);padding:2px 4px 7px;text-transform:uppercase;letter-spacing:.5px}
+.date-tile-divider{height:1px;background:var(--border);margin:0 6px}
+.date-tile-week{font-size:9px;color:var(--muted);padding:5px 4px;line-height:1.4}
+main{flex:1;min-width:0;padding:16px 16px 16px 8px}
+/* hide sidebar on mobile, restore original main padding */
+@media(max-width:700px){
+  .date-sidebar{display:none}
+  main{padding:12px 10px 90px}
+  .page-wrap{display:block}
+}
+/* ── END SIDEBAR LAYOUT ── */
+
 .archive-toggle{font-size:12px;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-top:8px;margin-bottom:4px;background:none;border:none;padding:0}
 .archive-toggle:hover{color:var(--text)}
 /* mic + voice capture */
@@ -188,7 +204,14 @@ input[type=date]{color-scheme:dark}
 </header>
 
 <nav id="nav"></nav>
-<main id="main"></main>
+
+<div class="page-wrap">
+  <!-- Date sidebar -->
+  <aside class="date-sidebar" id="date-sidebar">
+    <div class="date-tile" id="date-tile"></div>
+  </aside>
+  <main id="main"></main>
+</div>
 
 <!-- Edit Task Modal -->
 <div class="modal-overlay" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
@@ -326,6 +349,25 @@ let projEditIdx = null;
 let openClients = new Set();
 let showArchive = false;
 let openNotes = new Set(); // tracks which task ids have notes expanded
+
+function renderDateTile(){
+  const now=new Date();
+  const months=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const days=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  // Week number
+  const jan1=new Date(now.getFullYear(),0,1);
+  const wk=Math.ceil(((now-jan1)/86400000+jan1.getDay()+1)/7);
+  // Days left in week
+  const daysLeft=6-now.getDay();
+  const el=document.getElementById('date-tile');
+  if(!el)return;
+  el.innerHTML=`
+    <div class="date-tile-month">${months[now.getMonth()]}</div>
+    <div class="date-tile-day">${now.getDate()}</div>
+    <div class="date-tile-dow">${days[now.getDay()]}</div>
+    <div class="date-tile-divider"></div>
+    <div class="date-tile-week">Wk ${wk}<br>${daysLeft}d left</div>`;
+}
 
 function loadData(){
   dataRef.on('value', snap => {
@@ -800,8 +842,23 @@ function toggleClient(sid){
 function addClientTask(clientName,sid){
   const txt=document.getElementById('ct-'+sid).value.trim();
   if(!txt)return;
+  const due=document.getElementById('ctd-'+sid).value||null;
+  const pri=document.getElementById('ctp-'+sid).value;
+  const task={id:uid(),text:txt,pri,due,done:false,client:clientName,notes:'',onenote:'',steps:[]};
   if(!data.clients[clientName])data.clients[clientName]={tasks:[]};
-  data.clients[clientName].tasks.push({id:uid(),text:txt,pri:document.getElementById('ctp-'+sid).value,due:document.getElementById('ctd-'+sid).value||null,done:false,client:clientName});
+  // Auto-mirror to Today or Week based on due date
+  const today=todayStr();
+  const weekEnd=new Date();weekEnd.setDate(weekEnd.getDate()+(6-weekEnd.getDay()));
+  const weekEndStr=weekEnd.toISOString().slice(0,10);
+  let mirrorList=null;
+  if(due&&due<=today)mirrorList='today';
+  else if(due&&due<=weekEndStr)mirrorList='week';
+  if(mirrorList){
+    data[mirrorList].push({...task,sourceList:mirrorList});
+    data.clients[clientName].tasks.push({...task,sourceList:mirrorList});
+  } else {
+    data.clients[clientName].tasks.push(task);
+  }
   openClients.add(sid);
   save();
   document.getElementById('ct-'+sid).value='';
@@ -1335,6 +1392,7 @@ function exportCSV(){
 }
 
 loadData();
+renderDateTile();
 </script>
 </body>
 </html>
