@@ -961,6 +961,20 @@ function toggleQ(i){data.questions[i].done=!data.questions[i].done;save();}
 function deleteQ(i){data.questions.splice(i,1);save();}
 
 // ── REVIEW ────────────────────────────────────────────────────
+// id-based helpers so Review items can be completed/edited safely
+function reviewToggle(list,id){
+  const i=data[list].findIndex(x=>x.id===id);
+  if(i>=0)toggleTask(list,i);
+}
+function reviewEdit(list,id){
+  const i=data[list].findIndex(x=>x.id===id);
+  if(i>=0)openEdit(list,i);
+}
+function reviewClientToggle(name,id){
+  const arr=(data.clients[name]||{}).tasks||[];
+  const i=arr.findIndex(x=>x.id===id);
+  if(i>=0)toggleClientTask(name,i);
+}
 function renderReview(){
   const t=todayStr();
   const wa=new Date();wa.setDate(wa.getDate()-7);
@@ -969,8 +983,8 @@ function renderReview(){
   const soon3s=soon3.toISOString().slice(0,10);
 
   const allTasks=[
-    ...data.today.map(x=>({...x,sourceList:'Daily'})),
-    ...data.week.map(x=>({...x,sourceList:'Weekly'}))
+    ...data.today.map(x=>({...x,sourceList:'Daily',_list:'today'})),
+    ...data.week.map(x=>({...x,sourceList:'Weekly',_list:'week'}))
   ];
   const overdue=allTasks.filter(x=>!x.done&&x.due&&x.due<t);
   const dueToday=allTasks.filter(x=>!x.done&&x.due===t);
@@ -988,11 +1002,13 @@ function renderReview(){
     const srcColor=x.sourceList==='Weekly'?'background:#0d2a1a;color:#4ade80':'background:#0d1f3d;color:#60a5fa';
     const mitBadge=x.mit&&!x.done?'<span class="tag tag-mit" style="font-size:10px">★ MIT</span>':'';
     return`<div class="review-item${x.done?' done':!x.done&&x.due&&x.due<t?' overdue':''}">
+      <input type="checkbox"${x.done?' checked':''} onchange="reviewToggle('${x._list}','${x.id}')" style="cursor:pointer;accent-color:var(--accent);margin-top:1px" title="Mark complete">
       <span class="src-tag" style="${srcColor}">${x.sourceList}</span>
       <span style="flex:1">${x.text}</span>
       ${mitBadge}
       ${x.due?`<span style="font-size:11px;color:var(--muted)">${fmtDate(x.due)}</span>`:''}
       ${x.client?`<span class="tag tag-client" style="font-size:10px">${x.client}</span>`:''}
+      <button class="act-btn" onclick="reviewEdit('${x._list}','${x.id}')" title="Edit"><i class="ti ti-pencil"></i></button>
     </div>`;
   }
 
@@ -1004,7 +1020,13 @@ function renderReview(){
       <div style="font-weight:500;font-size:13px;margin-bottom:5px"><i class="ti ti-building" style="color:var(--accent)"></i> ${name} <span style="font-weight:400;color:var(--muted);font-size:12px">${tasks.length} active</span></div>
       ${tasks.map(task=>{
         const mitBadge=task.mit?'<span class="tag tag-mit" style="font-size:10px">★ MIT</span> ':'';
-        return`<div class="review-item">${mitBadge}${task.text}${task.due?` <span style="font-size:11px;color:var(--muted);margin-left:6px">${fmtDate(task.due)}</span>`:''}</div>`;
+        const editBtn=task.sourceList&&data[task.sourceList]?`<button class="act-btn" onclick="reviewEdit('${task.sourceList}','${task.id}')" title="Edit"><i class="ti ti-pencil"></i></button>`:'';
+        return`<div class="review-item">
+          <input type="checkbox" onchange="reviewClientToggle('${name}','${task.id}')" style="cursor:pointer;accent-color:var(--accent);margin-top:1px" title="Mark complete">
+          <span style="flex:1">${mitBadge}${task.text}</span>
+          ${task.due?`<span style="font-size:11px;color:var(--muted)">${fmtDate(task.due)}</span>`:''}
+          ${editBtn}
+        </div>`;
       }).join('')}
     </div>`;
   }).join('');
@@ -1084,6 +1106,7 @@ function renderInbox(){
       <div class="inbox-actions">
         <button class="inbox-btn" onclick="moveInbox(${i},'today')"><i class="ti ti-sun"></i> Today</button>
         <button class="inbox-btn" onclick="moveInbox(${i},'week')"><i class="ti ti-calendar-week"></i> Week</button>
+        <select onchange="inboxSetClient(${i},this.value)" style="padding:5px 8px;font-size:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:var(--radius);max-width:150px;outline:none">${clientSelectOpts(t.client||'')}</select>
         <button class="inbox-btn" onclick="openEdit('inbox',${i})"><i class="ti ti-pencil"></i> Edit</button>
         <button class="inbox-btn" onclick="deleteTask('inbox',${i})"><i class="ti ti-trash"></i></button>
       </div>
@@ -1111,6 +1134,10 @@ function moveInbox(i,list){
     if(ci>=0)data.clients[t.client].tasks[ci]={...t,sourceList:list};
     else data.clients[t.client].tasks.push({...t,sourceList:list});
   }
+  save();
+}
+function inboxSetClient(i,val){
+  data.inbox[i].client=val||null;
   save();
 }
 
