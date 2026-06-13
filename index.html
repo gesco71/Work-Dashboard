@@ -357,8 +357,9 @@ function renderDateTile(){
   // Week number
   const jan1=new Date(now.getFullYear(),0,1);
   const wk=Math.ceil(((now-jan1)/86400000+jan1.getDay()+1)/7);
-  // Days left in week
-  const daysLeft=6-now.getDay();
+  // Days left in the year
+  const jan1Next=new Date(now.getFullYear()+1,0,1);
+  const daysLeftYear=Math.ceil((jan1Next-now)/86400000)-1;
   const el=document.getElementById('date-tile');
   if(!el)return;
   el.innerHTML=`
@@ -366,7 +367,7 @@ function renderDateTile(){
     <div class="date-tile-day">${now.getDate()}</div>
     <div class="date-tile-dow">${days[now.getDay()]}</div>
     <div class="date-tile-divider"></div>
-    <div class="date-tile-week">Wk ${wk}<br>${daysLeft}d left</div>`;
+    <div class="date-tile-week">Wk ${wk}<br>${daysLeftYear}d to go</div>`;
 }
 
 function loadData(){
