@@ -327,6 +327,8 @@ const firebaseConfig = {
   appId: "1:569336803850:web:ed9c96dcc107820b0f25f3"
 };
 firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const provider = new firebase.auth.GoogleAuthProvider();  
 const db = firebase.database();
 const dataRef = db.ref('task-dashboard');
 
