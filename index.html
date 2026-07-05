@@ -1236,9 +1236,7 @@ function exportCSV(){
 
 // ── AUTH + INIT ───────────────────────────────────────────────
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(function() {
-  auth.getRedirectResult().then(function(result) {
-    // handled by onAuthStateChanged
-  }).catch(function(err) { console.error(err); });
+  
 
   auth.onAuthStateChanged(function(user) {
     if (user) {
