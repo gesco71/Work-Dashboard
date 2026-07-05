@@ -1236,7 +1236,13 @@ function exportCSV(){
 
 // ── AUTH + INIT ───────────────────────────────────────────────
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(function() {
-  
+  auth.getRedirectResult().then(function(result) {
+    if (result && result.user) {
+      loadData();
+      renderDateTile();
+      return;
+    }
+  }).catch(function(err) { console.error(err); });
 
   auth.onAuthStateChanged(function(user) {
     if (user) {
@@ -1259,6 +1265,3 @@ firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(functi
     }
   });
 });
-</script>
-</body>
-</html>
