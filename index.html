@@ -1246,7 +1246,7 @@ auth.onAuthStateChanged(function(user) {
   } else {
     document.body.innerHTML = '<div style="display:flex;height:100vh;align-items:center;justify-content:center;background:#0f1117;"><button id="signin-btn" style="padding:14px 28px;font-size:16px;background:#4285F4;color:white;border:none;border-radius:8px;cursor:pointer;">Sign in with Google</button></div>';
     document.getElementById("signin-btn").addEventListener("click", function() {
-      var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      var isMobile = var isMobile = /Android/i.test(navigator.userAgent);iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (isMobile) {
         firebase.auth().signInWithRedirect(provider);
       } else {
