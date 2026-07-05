@@ -1235,6 +1235,10 @@ function exportCSV(){
 }
 
 // ── AUTH + INIT ───────────────────────────────────────────────
+auth.getRedirectResult().then(result => {
+  // redirect result handled by onAuthStateChanged below
+}).catch(err => console.error(err));
+
 auth.onAuthStateChanged(user => {
   if (user) {
     loadData();
