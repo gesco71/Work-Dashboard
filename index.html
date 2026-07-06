@@ -1244,8 +1244,9 @@ firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(functi
     }
   }).catch(function(err) { console.error(err); });
 
-  auth.onAuthStateChanged(function(user) {
-    if (user) {
+ auth.onAuthStateChanged(function(user) {
+    var isIOS = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (user || isIOS) {
       loadData();
       renderDateTile();
     } else {
