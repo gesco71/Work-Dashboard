@@ -1083,7 +1083,16 @@ function renderInbox(){
     </div>
   </div>`).join('');
   return`<div class="section-title">Inbox — Capture &amp; Triage</div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Voice captures and quick thoughts land here.</p>
+    <p style="<p style="font-size:12px;color:var(--muted);margin-bottom:12px">Voice captures and quick thoughts land here. <button onclick="var t=document.getElementById('inbox-tips');t.style.display=t.style.display==='none'?'block':'none'" style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:0">💡 Tips</button></p>
+<div id="inbox-tips" style="display:none;font-size:12px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:12px;line-height:1.8">
+  <strong style="color:var(--text)">Formula:</strong> "Task for Client, due Day, Priority priority"<br>
+  <strong style="color:var(--text)">Clients:</strong> "for PartnerMD" / "for Veranex" / "for Exostar"<br>
+  <strong style="color:var(--text)">Dates:</strong> "due Friday" / "due tomorrow" / "due June 20th" / "end of week"<br>
+  <strong style="color:var(--text)">Priority:</strong> "high priority" / "urgent" / "low priority"<br>
+  <strong style="color:var(--text)">List:</strong> "add to today" / "add to weekly"<br>
+  <strong style="color:var(--text)">MIT:</strong> "mark as MIT"<br>
+  <strong style="color:var(--text)">Example:</strong> "Follow up with PartnerMD on renewal, due Friday, high priority"
+</div>-size:12px;color:var(--muted);margin-bottom:12px">Voice captures and quick thoughts land here.</p>
     ${addRow}${list||'<div class="empty">Inbox zero — nicely done</div>'}`;
 }
 function quickInbox(){
